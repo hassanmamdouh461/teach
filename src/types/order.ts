@@ -15,6 +15,7 @@ export interface Order {
   status: OrderStatus;
   /** Financial status. Only set to 'Paid' from Payment.tsx — never from the kitchen/orders screen. */
   paymentStatus: PaymentStatus;
+  paymentMethod?: 'Cash' | 'Card';
   items: OrderItem[];
   totalAmount: number;
   createdAt: string; // ISO string

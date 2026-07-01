@@ -23,9 +23,15 @@ export function PaymentModal({ order, isOpen, onClose, onPaymentComplete }: Paym
   // Reset all state when the modal opens on a fresh order
   useEffect(() => {
     if (isOpen && order) {
-      setPaymentMethod('Cash');
-      setIsProcessing(false);
-      setShowReceipt(false);
+      if (order.paymentStatus === 'Paid') {
+        setPaymentMethod(order.paymentMethod || 'Cash');
+        setIsProcessing(false);
+        setShowReceipt(true);
+      } else {
+        setPaymentMethod('Cash');
+        setIsProcessing(false);
+        setShowReceipt(false);
+      }
       paymentFiredRef.current = false;
     }
     // Cleanup: cancel any pending timer if the modal is closed externally (e.g. backdrop)

@@ -313,7 +313,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   const completeWithPayment = useCallback(async (id: string, method: 'Cash' | 'Card' = 'Cash') => {
     const snapshot = ordersListRef.current;
-    const patch: Partial<Order> = { paymentStatus: 'Paid' };
+    const patch: Partial<Order> = { paymentStatus: 'Paid', paymentMethod: method };
     addPendingWrite(id, patch);
     const updatedOrders = snapshot.map(o => o.id === id ? { ...o, ...patch } : o);
     setOrdersList(updatedOrders);

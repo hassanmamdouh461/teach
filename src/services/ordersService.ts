@@ -39,6 +39,7 @@ export const ordersService = {
           items,
           status: doc.status as OrderStatus,
           paymentStatus: (doc.paymentStatus as PaymentStatus) ?? 'Unpaid',
+          paymentMethod: doc.paymentMethod as 'Cash' | 'Card' | undefined,
           totalAmount: doc.totalAmount,
           createdAt: doc.createdAt,
         };
@@ -79,6 +80,7 @@ export const ordersService = {
         items,
         status: response.status,
         paymentStatus: (response.paymentStatus as PaymentStatus) ?? 'Unpaid',
+        paymentMethod: response.paymentMethod as 'Cash' | 'Card' | undefined,
         totalAmount: response.totalAmount,
         createdAt: response.createdAt,
       };
@@ -112,6 +114,7 @@ export const ordersService = {
         items,
         status: response.status,
         paymentStatus: (response.paymentStatus as PaymentStatus) ?? 'Unpaid',
+        paymentMethod: response.paymentMethod as 'Cash' | 'Card' | undefined,
         totalAmount: response.totalAmount,
         createdAt: response.createdAt,
       };
@@ -154,6 +157,7 @@ export const ordersService = {
         items,
         status: response.status,
         paymentStatus: (response.paymentStatus as PaymentStatus) ?? 'Unpaid',
+        paymentMethod: response.paymentMethod as 'Cash' | 'Card' | undefined,
         totalAmount: response.totalAmount,
         createdAt: response.createdAt,
       };
@@ -190,6 +194,7 @@ export const ordersService = {
         items,
         status: response.status,
         paymentStatus: 'Paid',
+        paymentMethod: response.paymentMethod as 'Cash' | 'Card' | undefined,
         totalAmount: response.totalAmount,
         createdAt: response.createdAt,
       };

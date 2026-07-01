@@ -12,11 +12,20 @@ export default function Payment() {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
+  const [activeTab, setActiveTab] = useState<'pending' | 'paid'>('pending');
+
   // Show all orders pending payment — regardless of kitchen status.
   // An order leaves this screen ONLY when paymentStatus becomes 'Paid'.
-  const orders = useMemo(() =>
+  const pendingOrders = useMemo(() =>
     allOrders.filter(o => o.paymentStatus === 'Unpaid' && o.status !== 'Cancelled'),
   [allOrders]);
+
+  // Show paid orders
+  const paidOrders = useMemo(() =>
+    allOrders.filter(o => o.paymentStatus === 'Paid'),
+  [allOrders]);
+
+  const orders = activeTab === 'pending' ? pendingOrders : paidOrders;
 
   const handleOpenPayment = (order: Order) => {
     setSelectedOrder(order);
@@ -42,6 +51,9 @@ export default function Payment() {
       o.orderNumber.toLowerCase().includes(searchTerm.toLowerCase())
     )
     .sort((a, b) => {
+      if (activeTab === 'paid') {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      }
       const pd = (STATUS_PRIORITY[a.status] ?? 9) - (STATUS_PRIORITY[b.status] ?? 9);
       if (pd !== 0) return pd;
       return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
@@ -83,6 +95,42 @@ export default function Payment() {
         </div>
       </div>
 
+      {/* Tabs */}
+      <div className="flex border-b border-gray-200 gap-6">
+        <button
+          onClick={() => setActiveTab('pending')}
+          className={`pb-3 font-semibold text-sm transition-all border-b-2 px-1 relative ${
+            activeTab === 'pending'
+              ? 'border-mocha-700 text-mocha-800'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          Pending Payments ({pendingOrders.length})
+          {activeTab === 'pending' && (
+            <motion.div
+              layoutId="activeTabUnderline"
+              className="absolute bottom-0 left-0 right-0 h-0.5 bg-mocha-700"
+            />
+          )}
+        </button>
+        <button
+          onClick={() => setActiveTab('paid')}
+          className={`pb-3 font-semibold text-sm transition-all border-b-2 px-1 relative ${
+            activeTab === 'paid'
+              ? 'border-mocha-700 text-mocha-800'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          Paid Invoices ({paidOrders.length})
+          {activeTab === 'paid' && (
+            <motion.div
+              layoutId="activeTabUnderline"
+              className="absolute bottom-0 left-0 right-0 h-0.5 bg-mocha-700"
+            />
+          )}
+        </button>
+      </div>
+
       {/* Search */}
       <div className="relative max-w-full md:max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 md:w-5 md:h-5" />
@@ -95,7 +143,7 @@ export default function Payment() {
         />
       </div>
 
-      {/* Payable Orders Grid */}
+      {/* Orders Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
         {filteredOrders.length > 0 ? (
            filteredOrders.map(order => (
@@ -111,12 +159,13 @@ export default function Payment() {
                    <h3 className="text-xl font-bold text-gray-900">{order.tableId}</h3>
                    <p className="text-sm text-gray-500">order #{order.orderNumber}</p>
                 </div>
-                <div className={`px-2 py-1 rounded-full text-xs font-bold ${
+                <div className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                   activeTab === 'paid'         ? 'bg-green-50 text-green-700 border border-green-200' :
                    order.status === 'Completed' ? 'bg-purple-100 text-purple-700' :
                    order.status === 'Ready'     ? 'bg-green-100 text-green-700'  :
                                                   'bg-blue-50 text-blue-700'
                 }`}>
-                   {order.status === 'Completed' ? '✓ Ready to Pay' : order.status}
+                   {activeTab === 'paid' ? `Paid (${order.paymentMethod || 'Cash'})` : (order.status === 'Completed' ? '✓ Ready to Pay' : order.status)}
                 </div>
               </div>
 
@@ -132,16 +181,25 @@ export default function Payment() {
                 )}
                 <div className="border-t border-gray-100 pt-2 flex justify-between font-bold text-lg text-gray-900">
                    <span>Total</span>
-                   <span>${order.totalAmount.toFixed(2)}</span>
+                   <span>${(order.totalAmount * 1.1).toFixed(2)}</span>
                 </div>
               </div>
 
-              <button
-                onClick={() => handleOpenPayment(order)}
-                className="w-full py-3 bg-gray-900 text-white rounded-xl font-semibold hover:bg-black transition-colors flex items-center justify-center gap-2 shadow-lg shadow-gray-200"
-              >
-                <CreditCard size={18} /> Process Payment
-              </button>
+              {activeTab === 'pending' ? (
+                <button
+                  onClick={() => handleOpenPayment(order)}
+                  className="w-full py-3 bg-gray-900 text-white rounded-xl font-semibold hover:bg-black transition-colors flex items-center justify-center gap-2 shadow-lg shadow-gray-200"
+                >
+                  <CreditCard size={18} /> Process Payment
+                </button>
+              ) : (
+                <button
+                  onClick={() => handleOpenPayment(order)}
+                  className="w-full py-3 bg-mocha-600 text-white rounded-xl font-semibold hover:bg-mocha-700 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-gray-250"
+                >
+                  <CreditCard size={18} /> View Invoice
+                </button>
+              )}
             </motion.div>
            ))
         ) : (
@@ -149,7 +207,9 @@ export default function Payment() {
               <div className="bg-gray-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                  <Calculator className="w-8 h-8 text-gray-400" />
               </div>
-              <p className="text-lg font-medium">No payable orders found</p>
+              <p className="text-lg font-medium">
+                {activeTab === 'pending' ? 'No payable orders found' : 'No paid invoices found'}
+              </p>
            </div>
         )}
       </div>
