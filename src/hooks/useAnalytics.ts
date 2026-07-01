@@ -44,9 +44,9 @@ const CHART_CONFIG: Record<AnalyticsPeriod, {
   getBucket: (d: Date) => number;
 }> = {
   'Today': {
-    labels: ['9am', '10am', '11am', '12pm', '1pm', '2pm', '3pm', '4pm', '5pm', '6pm', '7pm', '8pm'],
-    base:   [0,      0,      0,      0,      0,     0,     0,     0,     0,     0,     0,     0],   // 🎬 demo baseline: all zeros
-    getBucket: (d) => d.getHours() - 9,
+    labels: ['12am', '2am', '4am', '6am', '8am', '10am', '12pm', '2pm', '4pm', '6pm', '8pm', '10pm'],
+    base:   [0,      0,      0,      0,      0,     0,      0,     0,     0,     0,     0,      0],   // 🎬 demo baseline: all zeros
+    getBucket: (d) => Math.floor(d.getHours() / 2),
   },
   'This Week': {
     labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
