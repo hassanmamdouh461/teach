@@ -196,22 +196,54 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       fetchOrders();
     }
 
-    // Realtime subscription - debounced refetch when orders or menu change externally
+    // Realtime subscription - bypass SDK serializer bug via native WebSockets
     const ordersChannel = `databases.${APPWRITE_CONFIG.DB_ID}.collections.${APPWRITE_CONFIG.COLLECTIONS.ORDERS}.documents`;
     const menuChannel = `databases.${APPWRITE_CONFIG.DB_ID}.collections.${APPWRITE_CONFIG.COLLECTIONS.MENU}.documents`;
 
-    const unsubscribe = client.subscribe([ordersChannel, menuChannel], (response) => {
-      const channels = response.channels as string[];
-      if (channels.some(c => c.includes(APPWRITE_CONFIG.COLLECTIONS.ORDERS))) {
-        debouncedFetchOrders();
-      }
-      if (channels.some(c => c.includes(APPWRITE_CONFIG.COLLECTIONS.MENU))) {
-        debouncedFetchMenu();
-      }
-    });
+    const wsUrl = `wss://fra.cloud.appwrite.io/v1/realtime?project=${APPWRITE_CONFIG.PROJECT_ID}&channels[]=${ordersChannel}&channels[]=${menuChannel}`;
+    let ws: WebSocket | null = null;
+    let isClosed = false;
+
+    const connect = () => {
+      if (isClosed) return;
+      ws = new WebSocket(wsUrl);
+
+      ws.onmessage = (event) => {
+        try {
+          const response = JSON.parse(event.data);
+          const channels = response.channels as string[];
+          if (channels) {
+            if (channels.some(c => c.includes(APPWRITE_CONFIG.COLLECTIONS.ORDERS))) {
+              debouncedFetchOrders();
+            }
+            if (channels.some(c => c.includes(APPWRITE_CONFIG.COLLECTIONS.MENU))) {
+              debouncedFetchMenu();
+            }
+          }
+        } catch (e) {
+          console.error('[DataContext] WebSocket parse error:', e);
+        }
+      };
+
+      ws.onerror = (err) => {
+        console.warn('[DataContext] WebSocket error:', err);
+      };
+
+      ws.onclose = () => {
+        setTimeout(() => {
+          connect();
+        }, 5000);
+      };
+    };
+
+    connect();
 
     return () => {
-      unsubscribe();
+      isClosed = true;
+      if (ws) {
+        ws.onclose = null;
+        ws.close();
+      }
       if (ordersDebounceRef.current) clearTimeout(ordersDebounceRef.current);
       if (menuDebounceRef.current) clearTimeout(menuDebounceRef.current);
     };
