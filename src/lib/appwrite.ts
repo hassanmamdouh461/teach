@@ -101,3 +101,29 @@ export async function directDelete(
         throw new Error((err as any).message || `HTTP ${res.status}`);
     }
 }
+
+/**
+ * Direct REST API GET call to list documents - bypasses the SDK serializer bug in v22.
+ */
+export async function directList(
+    collectionId: string,
+    queries: string[] = []
+): Promise<{ documents: any[]; total: number }> {
+    let url = `${APPWRITE_CONFIG.ENDPOINT}/databases/${APPWRITE_CONFIG.DB_ID}/collections/${collectionId}/documents`;
+    if (queries.length > 0) {
+        const queryParams = queries.map((q, idx) => `queries[${idx}]=${encodeURIComponent(q)}`).join('&');
+        url += `?${queryParams}`;
+    }
+    const res = await fetch(url, {
+        method: 'GET',
+        headers: {
+            'X-Appwrite-Project': APPWRITE_CONFIG.PROJECT_ID,
+        },
+    });
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error((err as any).message || `HTTP ${res.status}`);
+    }
+    return res.json();
+}
+

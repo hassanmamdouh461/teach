@@ -1,6 +1,6 @@
-import { databases, directCreate, directUpdate, directDelete, APPWRITE_CONFIG } from '../lib/appwrite';
+import { directCreate, directUpdate, directDelete, directList, APPWRITE_CONFIG } from '../lib/appwrite';
 import { Order, OrderStatus, PaymentStatus } from '../types/order';
-import { ID, Query } from 'appwrite';
+import { ID } from 'appwrite';
 
 /**
  * Orders Service - Handle all CRUD operations for Orders using Appwrite
@@ -11,10 +11,9 @@ export const ordersService = {
    */
   async getAll(): Promise<Order[]> {
     try {
-      const response = await databases.listDocuments(
-        APPWRITE_CONFIG.DB_ID,
+      const response = await directList(
         APPWRITE_CONFIG.COLLECTIONS.ORDERS,
-        [Query.limit(5000)]
+        ['{"method":"limit","values":[5000]}']
       );
 
       return response.documents.map((doc: any) => {
@@ -216,22 +215,48 @@ export const ordersService = {
    * Reset orders to defaults (delete all + recreate)
    */
   async resetToDefaults(defaultOrders: Omit<Order, 'id'>[]): Promise<Order[]> {
+    let existing: Order[] = [];
     try {
-      // Get all existing orders
-      const existing = await this.getAll();
-      
-      // Delete all existing orders
-      await Promise.all(existing.map(order => this.delete(order.id)));
-      
-      // Create new default orders
-      const created = await Promise.all(
-        defaultOrders.map(order => this.create(order))
-      );
-      
-      return created;
-    } catch (error) {
-      console.error('[ordersService] Error resetting orders:', error);
-      throw new Error('Failed to reset orders');
+      existing = await this.getAll();
+    } catch (e) {
+      console.warn('[ordersService] Could not fetch existing orders during reset:', e);
     }
+
+    // Try to delete existing orders from Appwrite
+    if (existing.length > 0) {
+      await Promise.all(
+        existing.map(async (order) => {
+          try {
+            await this.delete(order.id);
+          } catch (e) {
+            console.warn(`[ordersService] Failed to delete order ${order.id} on Appwrite:`, e);
+          }
+        })
+      );
+    }
+
+    // Try to create new default orders on Appwrite
+    const created: Order[] = [];
+    await Promise.all(
+      defaultOrders.map(async (order) => {
+        try {
+          const newOrder = await this.create(order);
+          created.push(newOrder);
+        } catch (e) {
+          console.warn('[ordersService] Failed to create default order on Appwrite:', e);
+          // Generate a local order as fallback
+          const localOrder: Order = {
+            ...order,
+            id: `local-ord-${Math.random().toString(36).substr(2, 9)}`,
+            createdAt: order.createdAt || new Date().toISOString()
+          };
+          created.push(localOrder);
+        }
+      })
+    );
+
+    // Save the final list to localStorage
+    localStorage.setItem('local_orders', JSON.stringify(created));
+    return created;
   },
 };

@@ -186,9 +186,9 @@ export function useAnalytics(period: AnalyticsPeriod): AnalyticsResult {
     [periodOrders],
   );
 
-  // Sum of real completed-order revenue in the period
+  // Sum of real completed-order revenue in the period (including 10% tax)
   const realRevenue = useMemo(
-    () => completedPeriod.reduce((s, o) => s + o.totalAmount, 0),
+    () => completedPeriod.reduce((s, o) => s + o.totalAmount * 1.1, 0),
     [completedPeriod],
   );
 
@@ -212,7 +212,7 @@ export function useAnalytics(period: AnalyticsPeriod): AnalyticsResult {
     completedPeriod.forEach(o => {
       const idx = cfg.getBucket(new Date(o.createdAt));
       if (idx >= 0 && idx < cfg.labels.length) {
-        realRev[idx]   += o.totalAmount;
+        realRev[idx]   += o.totalAmount * 1.1;
         realCount[idx] += 1;
       }
     });
@@ -239,7 +239,7 @@ export function useAnalytics(period: AnalyticsPeriod): AnalyticsResult {
         order.items.forEach(item => {
           if (!map[item.name]) map[item.name] = { name: item.name, count: 0, revenue: 0 };
           map[item.name].count   += item.quantity;
-          map[item.name].revenue += item.quantity * item.price;
+          map[item.name].revenue += item.quantity * item.price * 1.1;
         }),
       );
     } else {
@@ -252,7 +252,7 @@ export function useAnalytics(period: AnalyticsPeriod): AnalyticsResult {
         order.items.forEach(item => {
           if (!map[item.name]) map[item.name] = { name: item.name, count: 0, revenue: 0 };
           map[item.name].count   += item.quantity;
-          map[item.name].revenue += item.quantity * item.price;
+          map[item.name].revenue += item.quantity * item.price * 1.1;
         }),
       );
     }

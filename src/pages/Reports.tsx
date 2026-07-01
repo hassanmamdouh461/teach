@@ -75,7 +75,7 @@ export default function Reports() {
   // Stat cards — when dateRange = 'Today', these equal Dashboard's values exactly
   const statCards = [
     {
-      label: 'Total Revenue (excl. tax)',
+      label: 'Total Revenue (incl. tax)',
       value: `$${analytics.totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
       icon: DollarSign,
       trend: analytics.realRevenue > 0 ? `+$${analytics.realRevenue.toFixed(2)} ${pLabel}` : 'Lifetime total',

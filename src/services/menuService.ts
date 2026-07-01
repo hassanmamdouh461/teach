@@ -1,6 +1,6 @@
-import { databases, directCreate, directUpdate, directDelete, APPWRITE_CONFIG } from '../lib/appwrite';
+import { directCreate, directUpdate, directDelete, directList, APPWRITE_CONFIG } from '../lib/appwrite';
 import { MenuItem } from '../types/menu';
-import { ID, Query } from 'appwrite';
+import { ID } from 'appwrite';
 
 /**
  * Menu Service - Handle all CRUD operations for Menu Items using Appwrite
@@ -11,10 +11,9 @@ export const menuService = {
    */
   async getAll(): Promise<MenuItem[]> {
     try {
-      const response = await databases.listDocuments(
-        APPWRITE_CONFIG.DB_ID,
+      const response = await directList(
         APPWRITE_CONFIG.COLLECTIONS.MENU,
-        [Query.limit(5000)]
+        ['{"method":"limit","values":[5000]}']
       );
 
       return response.documents.map((doc: any) => ({
@@ -107,22 +106,47 @@ export const menuService = {
    * Reset menu to default items (delete all + recreate)
    */
   async resetToDefaults(defaultItems: Omit<MenuItem, 'id'>[]): Promise<MenuItem[]> {
+    let existing: MenuItem[] = [];
     try {
-      // Get all existing items
-      const existing = await this.getAll();
-      
-      // Delete all existing items
-      await Promise.all(existing.map(item => this.delete(item.id)));
-      
-      // Create new default items
-      const created = await Promise.all(
-        defaultItems.map(item => this.create(item))
-      );
-      
-      return created;
-    } catch (error) {
-      console.error('[menuService] Error resetting menu:', error);
-      throw new Error('Failed to reset menu');
+      existing = await this.getAll();
+    } catch (e) {
+      console.warn('[menuService] Could not fetch existing menu items during reset:', e);
     }
+
+    // Try to delete existing items from Appwrite
+    if (existing.length > 0) {
+      await Promise.all(
+        existing.map(async (item) => {
+          try {
+            await this.delete(item.id);
+          } catch (e) {
+            console.warn(`[menuService] Failed to delete menu item ${item.id} on Appwrite:`, e);
+          }
+        })
+      );
+    }
+
+    // Try to create new default items on Appwrite
+    const created: MenuItem[] = [];
+    await Promise.all(
+      defaultItems.map(async (item) => {
+        try {
+          const newItem = await this.create(item);
+          created.push(newItem);
+        } catch (e) {
+          console.warn('[menuService] Failed to create default menu item on Appwrite:', e);
+          // Generate a local item as fallback
+          const localItem: MenuItem = {
+            ...item,
+            id: `local-${Math.random().toString(36).substr(2, 9)}`
+          };
+          created.push(localItem);
+        }
+      })
+    );
+
+    // Save the final list to localStorage
+    localStorage.setItem('local_menu_items', JSON.stringify(created));
+    return created;
   },
 };

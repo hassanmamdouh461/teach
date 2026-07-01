@@ -26,7 +26,7 @@ export default function Dashboard() {
       color: 'blue',
     },
     {
-      label: "Today's Revenue (excl. tax)",
+      label: "Today's Revenue (incl. tax)",
       value: `$${analytics.totalRevenue.toFixed(2)}`,
       icon: DollarSign,
       trend: analytics.realRevenue > 0 ? `+$${analytics.realRevenue.toFixed(2)} live` : 'Daily total',

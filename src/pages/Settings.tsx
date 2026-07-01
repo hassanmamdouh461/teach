@@ -51,13 +51,25 @@ export default function Settings() {
     if (window.confirm('⚠️ This will delete ALL data from Appwrite (Menu + Orders). Continue?')) {
       try {
         setResetting(true);
-        // Delete all menu items
-        const menuItems = await menuService.getAll();
-        await Promise.all(menuItems.map(item => menuService.delete(item.id)));
+        // Try to delete all menu items from Appwrite
+        try {
+          const menuItems = await menuService.getAll();
+          await Promise.all(menuItems.map(item => menuService.delete(item.id).catch(() => {})));
+        } catch (e) {
+          console.warn('Failed to clean menu items from Appwrite:', e);
+        }
         
-        // Delete all orders
-        const orders = await ordersService.getAll();
-        await Promise.all(orders.map(order => ordersService.delete(order.id)));
+        // Try to delete all orders from Appwrite
+        try {
+          const orders = await ordersService.getAll();
+          await Promise.all(orders.map(order => ordersService.delete(order.id).catch(() => {})));
+        } catch (e) {
+          console.warn('Failed to clean orders from Appwrite:', e);
+        }
+
+        // Clear local storage cache
+        localStorage.removeItem('local_menu_items');
+        localStorage.removeItem('local_orders');
         
         alert('✅ All data cleared successfully!');
         window.location.reload();

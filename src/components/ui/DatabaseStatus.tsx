@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Database, Wifi, WifiOff, RefreshCw } from 'lucide-react';
-import { databases, APPWRITE_CONFIG } from '../../lib/appwrite';
+import { directList, APPWRITE_CONFIG } from '../../lib/appwrite';
 import { motion } from 'framer-motion';
 
 type ConnectionStatus = 'checking' | 'connected' | 'disconnected' | 'error';
@@ -12,11 +12,9 @@ export function DatabaseStatus() {
   const checkConnection = async () => {
     setStatus('checking');
     try {
-      // Try to list documents from menu collection
-      await databases.listDocuments(
-        APPWRITE_CONFIG.DB_ID,
+      await directList(
         APPWRITE_CONFIG.COLLECTIONS.MENU,
-        []
+        ['{"method":"limit","values":[1]}']
       );
       setStatus('connected');
       setLastChecked(new Date());

@@ -62,7 +62,7 @@ export default function Payment() {
   const today = new Date().toDateString();
   const totalRevenue = allOrders
     .filter(o => o.paymentStatus === 'Paid' && new Date(o.createdAt).toDateString() === today)
-    .reduce((sum, o) => sum + o.totalAmount, 0);
+    .reduce((sum, o) => sum + o.totalAmount * 1.1, 0);
 
   return (
     <div className="space-y-4 md:space-y-8">
@@ -77,7 +77,7 @@ export default function Payment() {
                 <DollarSign size={18} className="md:w-5 md:h-5" />
             </div>
             <div>
-                <p className="text-[10px] md:text-xs text-gray-500 font-medium">Today's Revenue (excl. tax)</p>
+                <p className="text-[10px] md:text-xs text-gray-500 font-medium">Today's Revenue (incl. tax)</p>
                 <p className="text-base md:text-lg font-bold text-gray-900">${totalRevenue.toFixed(2)}</p>
             </div>
         </div>
