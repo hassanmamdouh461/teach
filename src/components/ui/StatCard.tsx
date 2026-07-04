@@ -63,7 +63,7 @@ export function StatCard({ label, value, icon: Icon, trend, color }: StatCardPro
           </motion.div>
           
           {/* Trend badge - responsive */}
-          <span className="text-[10px] md:text-xs font-semibold text-green-600 bg-green-50 px-1.5 md:px-2.5 py-0.5 md:py-1 rounded-lg border border-green-100/50 shadow-sm text-right min-w-0 leading-tight max-w-[62%] line-clamp-2">
+          <span className="text-[10px] md:text-xs font-sans font-semibold text-green-600 bg-green-50 px-1.5 md:px-2.5 py-0.5 md:py-1 rounded-lg border border-green-100/50 shadow-sm text-right min-w-0 leading-tight max-w-[62%]">
             {trend}
           </span>
         </div>

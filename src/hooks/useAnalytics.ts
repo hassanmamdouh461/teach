@@ -5,7 +5,7 @@
  *
  * Dual-mode formula:
  *   • 'Today'               → 100 % real data only. Revenue, orders, and top items
- *                             are derived exclusively from live Appwrite records.
+ *                             are derived exclusively from live database records.
  *                             Dashboard starts at $0.00 / 0 orders each morning.
  *   • 'This Week/Month/Year'→ historical baseline  +  real completed orders.
  *                             Keeps realistic aggregate numbers for portfolio demos.
@@ -13,6 +13,7 @@
  * When Reports is on "Today", every number matches Dashboard exactly.
  */
 import { useMemo } from 'react';
+import { getTaxRate } from '../utils/settingsConfig';
 import { useOrders } from './useOrders';
 import { useMenu } from './useMenu';
 import { Order, OrderStatus } from '../types/order';
@@ -181,14 +182,15 @@ export function useAnalytics(period: AnalyticsPeriod): AnalyticsResult {
   );
 
   // Only paid orders contribute to revenue (paymentStatus set exclusively by Payment.tsx)
+  // Financial rule: filter completed orders by the date they were actually PAID (paidAt) rather than created.
   const completedPeriod = useMemo(
-    () => periodOrders.filter(o => o.paymentStatus === 'Paid'),
-    [periodOrders],
+    () => orders.filter(o => o.paymentStatus === 'Paid' && inPeriod(o.paidAt || o.createdAt, period)),
+    [orders, period],
   );
 
-  // Sum of real completed-order revenue in the period (including 10% tax)
+  // Sum of real completed-order revenue in the period (including tax)
   const realRevenue = useMemo(
-    () => completedPeriod.reduce((s, o) => s + o.totalAmount * 1.1, 0),
+    () => completedPeriod.reduce((s, o) => s + o.totalAmount * (1 + getTaxRate()), 0),
     [completedPeriod],
   );
 
@@ -210,9 +212,9 @@ export function useAnalytics(period: AnalyticsPeriod): AnalyticsResult {
     const realCount = new Array(cfg.labels.length).fill(0);
 
     completedPeriod.forEach(o => {
-      const idx = cfg.getBucket(new Date(o.createdAt));
+      const idx = cfg.getBucket(new Date(o.paidAt || o.createdAt));
       if (idx >= 0 && idx < cfg.labels.length) {
-        realRev[idx]   += o.totalAmount * 1.1;
+        realRev[idx]   += o.totalAmount * (1 + getTaxRate());
         realCount[idx] += 1;
       }
     });
@@ -239,7 +241,7 @@ export function useAnalytics(period: AnalyticsPeriod): AnalyticsResult {
         order.items.forEach(item => {
           if (!map[item.name]) map[item.name] = { name: item.name, count: 0, revenue: 0 };
           map[item.name].count   += item.quantity;
-          map[item.name].revenue += item.quantity * item.price * 1.1;
+          map[item.name].revenue += item.quantity * item.price * (1 + getTaxRate());
         }),
       );
     } else {
@@ -252,7 +254,7 @@ export function useAnalytics(period: AnalyticsPeriod): AnalyticsResult {
         order.items.forEach(item => {
           if (!map[item.name]) map[item.name] = { name: item.name, count: 0, revenue: 0 };
           map[item.name].count   += item.quantity;
-          map[item.name].revenue += item.quantity * item.price * 1.1;
+          map[item.name].revenue += item.quantity * item.price * (1 + getTaxRate());
         }),
       );
     }

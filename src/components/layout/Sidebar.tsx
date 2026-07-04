@@ -7,6 +7,7 @@ import {
   BarChart3, 
   Settings, 
   Coffee,
+  ChefHat,
   ChevronLeft,
   ChevronRight,
   X
@@ -16,6 +17,7 @@ import { clsx } from 'clsx';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface SidebarProps {
   mobileOpen?: boolean;
@@ -26,6 +28,7 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const { user } = useAuth();
   const isMobile = useIsMobile();
+  const { t, isRtl } = useLanguage();
 
   const handleItemClick = () => {
     // Close sidebar on mobile when item is clicked
@@ -37,7 +40,8 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
   const sidebarContent = (
     <div 
       className={clsx(
-        "h-full bg-gray-900 border-r border-gray-800 flex flex-col transition-all duration-300 relative",
+        "h-full bg-gray-900 flex flex-col transition-all duration-300 relative",
+        isRtl ? "border-l border-gray-800" : "border-r border-gray-800",
         !isMobile && (collapsed ? "w-20" : "w-64")
       )}
     >
@@ -45,9 +49,15 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
       {!isMobile && (
         <button 
           onClick={() => setCollapsed(!collapsed)}
-          className="absolute -right-3 top-8 bg-mocha-600 text-white p-1 rounded-full shadow-lg hover:bg-mocha-700 transition-colors z-50"
+          className={clsx(
+            "absolute top-8 bg-mocha-600 text-white p-1 rounded-full shadow-lg hover:bg-mocha-700 transition-colors z-50",
+            isRtl ? "-left-3" : "-right-3"
+          )}
         >
-          {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+          {collapsed 
+            ? (isRtl ? <ChevronLeft size={16} /> : <ChevronRight size={16} />) 
+            : (isRtl ? <ChevronRight size={16} /> : <ChevronLeft size={16} />)
+          }
         </button>
       )}
 
@@ -76,15 +86,15 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
 
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">
-        <SidebarItem icon={LayoutDashboard} label="Dashboard" to="/dashboard" collapsed={!isMobile && collapsed} onClick={handleItemClick} />
-        <SidebarItem icon={ClipboardList} label="Orders" to="/orders" collapsed={!isMobile && collapsed} onClick={handleItemClick} />
-        <SidebarItem icon={UtensilsCrossed} label="Menu" to="/menu" collapsed={!isMobile && collapsed} onClick={handleItemClick} />
-        <SidebarItem icon={CreditCard} label="Payment & Invoice" to="/payment" collapsed={!isMobile && collapsed} onClick={handleItemClick} />
-        <SidebarItem icon={BarChart3} label="Reports" to="/reports" collapsed={!isMobile && collapsed} onClick={handleItemClick} />
+        <SidebarItem icon={LayoutDashboard} label={t('Dashboard')} to="/dashboard" collapsed={!isMobile && collapsed} onClick={handleItemClick} />
+        <SidebarItem icon={ClipboardList} label={t('Cashier Board')} to="/orders" collapsed={!isMobile && collapsed} onClick={handleItemClick} />
+        <SidebarItem icon={CreditCard} label={t('Payment & Invoice')} to="/payment" collapsed={!isMobile && collapsed} onClick={handleItemClick} />
+        <SidebarItem icon={UtensilsCrossed} label={t('Menu')} to="/menu" collapsed={!isMobile && collapsed} onClick={handleItemClick} />
+        <SidebarItem icon={BarChart3} label={t('Reports')} to="/reports" collapsed={!isMobile && collapsed} onClick={handleItemClick} />
         
         <div className="my-4 border-t border-gray-800" />
         
-        <SidebarItem icon={Settings} label="Settings" to="/settings" collapsed={!isMobile && collapsed} onClick={handleItemClick} />
+        <SidebarItem icon={Settings} label={t('Settings')} to="/settings" collapsed={!isMobile && collapsed} onClick={handleItemClick} />
       </nav>
 
       {/* User Mini Profile */}
@@ -125,11 +135,14 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
             
             {/* Drawer */}
             <motion.div
-              initial={{ x: '-100%' }}
+              initial={{ x: isRtl ? '100%' : '-100%' }}
               animate={{ x: 0 }}
-              exit={{ x: '-100%' }}
+              exit={{ x: isRtl ? '100%' : '-100%' }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="fixed top-0 left-0 bottom-0 w-72 z-50 touch-pan-y"
+              className={clsx(
+                "fixed top-0 bottom-0 w-72 z-50 touch-pan-y",
+                isRtl ? "right-0" : "left-0"
+              )}
               style={{ willChange: 'transform' }}
             >
               {sidebarContent}

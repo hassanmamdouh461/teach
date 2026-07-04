@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Copy, Check, Printer, Download, QrCode } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface QrMenuModalProps {
   isOpen: boolean;
@@ -8,9 +9,10 @@ interface QrMenuModalProps {
 }
 
 export function QrMenuModal({ isOpen, onClose }: QrMenuModalProps) {
+  const { t } = useLanguage();
   const [copied, setCopied] = useState(false);
   
-  const publicMenuUrl = `${window.location.origin}/public-menu`;
+  const publicMenuUrl = 'https://cafeflow.appwrite.network/public-menu';
   const qrCodeImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=350x350&data=${encodeURIComponent(publicMenuUrl)}`;
 
   const handleCopyLink = async () => {
@@ -164,7 +166,6 @@ export function QrMenuModal({ isOpen, onClose }: QrMenuModalProps) {
             className="fixed inset-0 bg-black/60 backdrop-blur-sm"
           />
 
-          {/* Modal Content */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 15 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -182,14 +183,14 @@ export function QrMenuModal({ isOpen, onClose }: QrMenuModalProps) {
             {/* Title */}
             <div className="flex items-center gap-2 mb-1 mt-2 text-mocha-700">
               <QrCode className="w-6 h-6 text-caramel" />
-              <h2 className="text-xl font-bold text-gray-900">منيو كود QR للزبائن</h2>
+              <h2 className="text-xl font-bold text-gray-900">{t('QR Code Menu')}</h2>
             </div>
             <p className="text-xs text-gray-500 text-center mb-6 px-4">
-              اعرض أو اطبع هذا الرمز ليتمكن الزبائن من مسحه وتصفح المنيو بأسعاره وتوفر الأصناف مباشرة على هواتفهم.
+              {t('Show or print this code so customers can scan it to browse the menu, pricing, and availability directly on their phones.')}
             </p>
 
             {/* QR Card Poster Preview */}
-            <div className="bg-mocha-50 border border-mocha-100 p-5 rounded-2xl flex flex-col items-center shadow-inner w-full max-w-[280px] mb-6">
+            <div className="bg-mocha-50 border border-mocha-100 p-5 rounded-2xl flex flex-col items-center shadow-inner w-full max-w-[280px] mb-6 text-gray-900">
               <span className="font-extrabold text-mocha-800 text-lg tracking-wide mb-1">BrewMaster</span>
               <span className="text-[9px] text-mocha-400 font-semibold tracking-widest uppercase mb-4">✦ Menu Stand ✦</span>
               
@@ -203,8 +204,8 @@ export function QrMenuModal({ isOpen, onClose }: QrMenuModalProps) {
               </div>
               
               <div className="mt-4 text-center">
-                <p className="text-xs font-bold text-mocha-700 mb-0.5">امسح الرمز لمشاهدة المنيو</p>
-                <p className="text-[10px] text-mocha-400 font-medium">Scan to view menu</p>
+                <p className="text-xs font-bold text-mocha-700 mb-0.5">{t('Scan QR Code to view menu')}</p>
+                <p className="text-[10px] text-mocha-400 font-medium">{t('Scan to view menu')}</p>
               </div>
             </div>
 
@@ -227,7 +228,7 @@ export function QrMenuModal({ isOpen, onClose }: QrMenuModalProps) {
                 className="flex items-center justify-center gap-2 py-3 px-4 bg-mocha-700 hover:bg-mocha-800 text-white rounded-xl font-semibold shadow-md shadow-mocha-700/20 transition-all active:scale-[0.98] text-sm"
               >
                 <Printer size={16} />
-                <span>طباعة الرمز</span>
+                <span>{t('Print Code')}</span>
               </button>
               
               <button
@@ -235,7 +236,7 @@ export function QrMenuModal({ isOpen, onClose }: QrMenuModalProps) {
                 className="flex items-center justify-center gap-2 py-3 px-4 bg-mocha-100 hover:bg-mocha-200 text-mocha-800 rounded-xl font-semibold border border-mocha-200 transition-all active:scale-[0.98] text-sm"
               >
                 <Download size={16} />
-                <span>تحميل الصورة</span>
+                <span>{t('Download Image')}</span>
               </button>
             </div>
           </motion.div>

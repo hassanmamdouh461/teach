@@ -6,6 +6,8 @@ export interface OrderItem {
   name: string;
   quantity: number;
   price: number;
+  status?: OrderStatus;
+  category?: string;
 }
 
 export interface Order {
@@ -19,18 +21,19 @@ export interface Order {
   items: OrderItem[];
   totalAmount: number;
   createdAt: string; // ISO string
+  paidAt?: string; // ISO string when payment was completed
 }
 
 // ─── Demo layout: 3 New · 2 Preparing · 3 Ready · 0 Completed · 0 Cancelled ──
 // ALL paymentStatus = 'Unpaid'  →  Dashboard revenue starts at $0.00
 // This is the single source of truth used by both the Settings "Reset" button
-// and the seed-appwrite.ts script, so both paths produce the exact same board.
+// and the reset logic, so both paths produce the exact same board.
 export const MOCK_ORDERS: Order[] = [
   // ═══════════════ NEW (3) ═══════════════
   {
     id: 'mock-id-001',
-    orderNumber: 'ORD-001',
-    tableId: 'Table 3',
+    orderNumber: '1',
+    tableId: 'Dine-in',
     status: 'New',
     paymentStatus: 'Unpaid',
     items: [
@@ -43,8 +46,8 @@ export const MOCK_ORDERS: Order[] = [
   },
   {
     id: 'mock-id-002',
-    orderNumber: 'ORD-002',
-    tableId: 'Table 7',
+    orderNumber: '2',
+    tableId: 'Takeaway',
     status: 'New',
     paymentStatus: 'Unpaid',
     items: [
@@ -56,8 +59,8 @@ export const MOCK_ORDERS: Order[] = [
   },
   {
     id: 'mock-id-003',
-    orderNumber: 'ORD-003',
-    tableId: 'Table 1',
+    orderNumber: '3',
+    tableId: 'Dine-in',
     status: 'New',
     paymentStatus: 'Unpaid',
     items: [
@@ -71,8 +74,8 @@ export const MOCK_ORDERS: Order[] = [
   // ═══════════════ PREPARING (2) ═══════════════
   {
     id: 'mock-id-004',
-    orderNumber: 'ORD-004',
-    tableId: 'Table 5',
+    orderNumber: '4',
+    tableId: 'Takeaway',
     status: 'Preparing',
     paymentStatus: 'Unpaid',
     items: [
@@ -84,8 +87,8 @@ export const MOCK_ORDERS: Order[] = [
   },
   {
     id: 'mock-id-005',
-    orderNumber: 'ORD-005',
-    tableId: 'Table 2',
+    orderNumber: '5',
+    tableId: 'Dine-in',
     status: 'Preparing',
     paymentStatus: 'Unpaid',
     items: [
@@ -99,8 +102,8 @@ export const MOCK_ORDERS: Order[] = [
   // ═══════════════ READY (3) ═══════════════
   {
     id: 'mock-id-006',
-    orderNumber: 'ORD-006',
-    tableId: 'Table 9',
+    orderNumber: '6',
+    tableId: 'Takeaway',
     status: 'Ready',
     paymentStatus: 'Unpaid',
     items: [
@@ -111,8 +114,8 @@ export const MOCK_ORDERS: Order[] = [
   },
   {
     id: 'mock-id-007',
-    orderNumber: 'ORD-007',
-    tableId: 'Table 4',
+    orderNumber: '7',
+    tableId: 'Dine-in',
     status: 'Ready',
     paymentStatus: 'Unpaid',
     items: [
@@ -125,8 +128,8 @@ export const MOCK_ORDERS: Order[] = [
   },
   {
     id: 'mock-id-008',
-    orderNumber: 'ORD-008',
-    tableId: 'Table 6',
+    orderNumber: '8',
+    tableId: 'Takeaway',
     status: 'Ready',
     paymentStatus: 'Unpaid',
     items: [

@@ -196,9 +196,7 @@ export default function PublicMenu() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.25 }}
-                className={`bg-white rounded-2xl border border-mocha-100/40 p-3.5 shadow-sm relative overflow-hidden flex gap-4 transition-all ${
-                  !item.available ? 'opacity-60 saturate-50' : 'hover:shadow-md'
-                }`}
+                className="bg-white rounded-2xl border border-mocha-100/40 p-3.5 shadow-sm relative overflow-hidden flex gap-4 transition-all hover:shadow-md"
               >
                 {/* Image */}
                 {item.image && (
@@ -208,13 +206,6 @@ export default function PublicMenu() {
                       alt={item.name}
                       className="w-full h-full object-cover"
                     />
-                    {!item.available && (
-                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                        <span className="bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow">
-                          {t.outOfStock}
-                        </span>
-                      </div>
-                    )}
                   </div>
                 )}
 
@@ -230,7 +221,7 @@ export default function PublicMenu() {
                       </span>
                     </div>
                     {item.description && (
-                      <p className="text-gray-500 text-xs mt-1 line-clamp-2 leading-relaxed">
+                      <p className="text-gray-500 text-xs mt-1 font-sans leading-relaxed">
                         {item.description}
                       </p>
                     )}
@@ -241,16 +232,6 @@ export default function PublicMenu() {
                     <span className="text-[10px] text-mocha-400 font-medium px-2 py-0.5 bg-mocha-50 rounded-full border border-mocha-100/20">
                       {CATEGORY_TRANSLATIONS[item.category]?.[lang] || item.category}
                     </span>
-
-                    {item.available ? (
-                      <span className="text-[10px] text-green-600 bg-green-50 px-2 py-0.5 rounded-full font-semibold border border-green-100">
-                        {t.available}
-                      </span>
-                    ) : (
-                      <span className="text-[10px] text-red-600 bg-red-50 px-2 py-0.5 rounded-full font-semibold border border-red-100">
-                        {t.outOfStock}
-                      </span>
-                    )}
                   </div>
                 </div>
               </motion.div>

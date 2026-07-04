@@ -3,18 +3,6 @@ import { MenuItem, INITIAL_MENU_ITEMS } from '../types/menu';
 import { Order, OrderStatus } from '../types/order';
 import { menuService } from '../services/menuService';
 import { ordersService } from '../services/ordersService';
-import { client, APPWRITE_CONFIG } from '../lib/appwrite';
-
-/**
- * Pending-writes guard.
- * While a mutation is in-flight we track the optimistic patch so that any
- * realtime-triggered refetch that races back with stale server data won't
- * overwrite the optimistic state the user already sees.
- */
-interface PendingWrite {
-  id: string;
-  patch: Partial<Order>;
-}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -33,7 +21,7 @@ interface OrdersState {
   orders: Order[];
   loading: boolean;
   error: Error | null;
-  addOrder: (order: Omit<Order, 'id'>) => Promise<void>;
+  addOrder: (order: Omit<Order, 'id'>) => Promise<Order | null>;
   updateOrderStatus: (id: string, status: OrderStatus) => Promise<void>;
   completeWithPayment: (id: string, method?: 'Cash' | 'Card') => Promise<void>;
   updateOrder: (id: string, data: Partial<Omit<Order, 'id'>>) => Promise<void>;
@@ -67,35 +55,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const menuFetched = useRef(false);
   const ordersFetched = useRef(false);
 
-  // ── Pending-writes guard ──────────────────────────────────────────────────────
-  // Tracks in-flight mutation patches so realtime refetches don't overwrite
-  // optimistic state with stale server data.
-  const pendingWritesRef = useRef<PendingWrite[]>([]);
-
-  const addPendingWrite = (id: string, patch: Partial<Order>) => {
-    pendingWritesRef.current = [...pendingWritesRef.current, { id, patch }];
-  };
-  const removePendingWrite = (id: string) => {
-    pendingWritesRef.current = pendingWritesRef.current.filter(pw => pw.id !== id);
-  };
-
-  /**
-   * Apply any pending optimistic patches on top of server data so that
-   * a stale refetch can never regress what the user already sees.
-   */
-  const mergeWithPending = (serverOrders: Order[]): Order[] => {
-    const pending = pendingWritesRef.current;
-    if (pending.length === 0) return serverOrders;
-    return serverOrders.map(order => {
-      const pw = pending.find(p => p.id === order.id);
-      return pw ? { ...order, ...pw.patch } : order;
-    });
-  };
-
-  // ── Debounce timer for realtime refetches ──────────────────────────────────
-  const ordersDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const menuDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   // ── Menu fetching ────────────────────────────────────────────────────────────
 
   const fetchMenu = useCallback(async () => {
@@ -104,89 +63,32 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       setMenuError(null);
       const data = await menuService.getAll();
       setMenuItems(data);
-      localStorage.setItem('local_menu_items', JSON.stringify(data));
     } catch (err) {
-      console.warn('[DataContext] Failed to fetch menu from Appwrite, using local cache:', err);
-      const cached = localStorage.getItem('local_menu_items');
-      if (cached) {
-        try {
-          setMenuItems(JSON.parse(cached));
-        } catch {
-          setMenuItems(INITIAL_MENU_ITEMS);
-        }
-      } else {
-        setMenuItems(INITIAL_MENU_ITEMS);
-      }
+      console.warn('[DataContext] Failed to fetch menu from local SQLite, using default initial items:', err);
+      setMenuItems(INITIAL_MENU_ITEMS);
     } finally {
       setMenuLoading(false);
     }
   }, []);
 
-  // ── Orders fetching (with pending-writes merge) ───────────────────────────
+  // ── Orders fetching ───────────────────────────────────────────────────────────
 
   const fetchOrders = useCallback(async () => {
     try {
       setOrdersLoading(true);
       setOrdersError(null);
       const data = await ordersService.getAll();
-      const merged = mergeWithPending(data);
-      setOrdersList(merged);
-      localStorage.setItem('local_orders', JSON.stringify(data));
+      setOrdersList(data);
     } catch (err) {
-      console.warn('[DataContext] Failed to fetch orders from Appwrite, using local cache:', err);
-      const cached = localStorage.getItem('local_orders');
-      if (cached) {
-        try {
-          setOrdersList(JSON.parse(cached));
-        } catch {
-          setOrdersList([]);
-        }
-      } else {
-        setOrdersList([]);
-      }
+      console.warn('[DataContext] Failed to fetch orders from local SQLite:', err);
+      setOrdersList([]);
     } finally {
       setOrdersLoading(false);
     }
   }, []);
 
-  /**
-   * Debounced version of fetchOrders for realtime events.
-   * Appwrite can fire multiple realtime events in rapid succession (e.g. when
-   * a document update triggers both a create and update event, or when multiple
-   * documents change). Debouncing collapses them into a single refetch.
-   */
-  const debouncedFetchOrders = useCallback(() => {
-    if (ordersDebounceRef.current) clearTimeout(ordersDebounceRef.current);
-    ordersDebounceRef.current = setTimeout(() => {
-      fetchOrders();
-    }, 300);
-  }, [fetchOrders]);
-
-  const debouncedFetchMenu = useCallback(() => {
-    if (menuDebounceRef.current) clearTimeout(menuDebounceRef.current);
-    menuDebounceRef.current = setTimeout(() => {
-      fetchMenu();
-    }, 300);
-  }, [fetchMenu]);
-
-  // Fetch once on mount + setup realtime
+  // Fetch once on mount
   useEffect(() => {
-    // Optimistic initial load from local storage to prevent blank screen
-    const cachedMenu = localStorage.getItem('local_menu_items');
-    if (cachedMenu) {
-      try {
-        setMenuItems(JSON.parse(cachedMenu));
-        setMenuLoading(false);
-      } catch {}
-    }
-    const cachedOrders = localStorage.getItem('local_orders');
-    if (cachedOrders) {
-      try {
-        setOrdersList(JSON.parse(cachedOrders));
-        setOrdersLoading(false);
-      } catch {}
-    }
-
     if (!menuFetched.current) {
       menuFetched.current = true;
       fetchMenu();
@@ -195,194 +97,94 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       ordersFetched.current = true;
       fetchOrders();
     }
-
-    // Realtime subscription - bypass SDK serializer bug via native WebSockets
-    const ordersChannel = `databases.${APPWRITE_CONFIG.DB_ID}.collections.${APPWRITE_CONFIG.COLLECTIONS.ORDERS}.documents`;
-    const menuChannel = `databases.${APPWRITE_CONFIG.DB_ID}.collections.${APPWRITE_CONFIG.COLLECTIONS.MENU}.documents`;
-
-    const wsUrl = `wss://fra.cloud.appwrite.io/v1/realtime?project=${APPWRITE_CONFIG.PROJECT_ID}&channels[]=${ordersChannel}&channels[]=${menuChannel}`;
-    let ws: WebSocket | null = null;
-    let isClosed = false;
-
-    const connect = () => {
-      if (isClosed) return;
-      ws = new WebSocket(wsUrl);
-
-      ws.onmessage = (event) => {
-        try {
-          const response = JSON.parse(event.data);
-          const channels = response.channels as string[];
-          if (channels) {
-            if (channels.some(c => c.includes(APPWRITE_CONFIG.COLLECTIONS.ORDERS))) {
-              debouncedFetchOrders();
-            }
-            if (channels.some(c => c.includes(APPWRITE_CONFIG.COLLECTIONS.MENU))) {
-              debouncedFetchMenu();
-            }
-          }
-        } catch (e) {
-          console.error('[DataContext] WebSocket parse error:', e);
-        }
-      };
-
-      ws.onerror = (err) => {
-        console.warn('[DataContext] WebSocket error:', err);
-      };
-
-      ws.onclose = () => {
-        setTimeout(() => {
-          connect();
-        }, 5000);
-      };
-    };
-
-    connect();
-
-    return () => {
-      isClosed = true;
-      if (ws) {
-        ws.onclose = null;
-        ws.close();
-      }
-      if (ordersDebounceRef.current) clearTimeout(ordersDebounceRef.current);
-      if (menuDebounceRef.current) clearTimeout(menuDebounceRef.current);
-    };
-  }, [fetchMenu, fetchOrders, debouncedFetchOrders, debouncedFetchMenu]);
-
-  // ── Refs for rollback — always point to latest state ─────────────────────────
-  const menuItemsRef = useRef(menuItems);
-  menuItemsRef.current = menuItems;
-  const ordersListRef = useRef(ordersList);
-  ordersListRef.current = ordersList;
+  }, [fetchMenu, fetchOrders]);
 
   // ── Menu mutations ────────────────────────────────────────────────────────────
 
   const addItem = useCallback(async (item: Omit<MenuItem, 'id'>) => {
-    let newItem: MenuItem;
     try {
-      newItem = await menuService.create(item);
+      const newItem = await menuService.create(item);
+      setMenuItems(prev => [newItem, ...prev]);
     } catch (err) {
-      console.warn('[DataContext] Failed to create item on Appwrite, saving locally:', err);
-      newItem = { ...item, id: `local-${Date.now()}` };
+      console.error('[DataContext] Failed to create item in SQLite:', err);
     }
-    setMenuItems(prev => {
-      const updated = [newItem, ...prev];
-      localStorage.setItem('local_menu_items', JSON.stringify(updated));
-      return updated;
-    });
   }, []);
 
   const updateItem = useCallback(async (id: string, data: Partial<Omit<MenuItem, 'id'>>) => {
-    const snapshot = menuItemsRef.current;
-    const updatedItems = snapshot.map(i => i.id === id ? { ...i, ...data } : i);
-    setMenuItems(updatedItems);
-    localStorage.setItem('local_menu_items', JSON.stringify(updatedItems));
     try {
-      await menuService.update(id, data);
+      const updatedItem = await menuService.update(id, data);
+      setMenuItems(prev => prev.map(i => i.id === id ? updatedItem : i));
     } catch (err) {
-      console.warn('[DataContext] Failed to update item on Appwrite, kept local changes:', err);
+      console.error('[DataContext] Failed to update item in SQLite:', err);
     }
   }, []);
 
   const deleteItem = useCallback(async (id: string) => {
-    const snapshot = menuItemsRef.current;
-    const updatedItems = snapshot.filter(i => i.id !== id);
-    setMenuItems(updatedItems);
-    localStorage.setItem('local_menu_items', JSON.stringify(updatedItems));
     try {
       await menuService.delete(id);
+      setMenuItems(prev => prev.filter(i => i.id !== id));
     } catch (err) {
-      console.warn('[DataContext] Failed to delete item on Appwrite, kept local changes:', err);
+      console.error('[DataContext] Failed to delete item in SQLite:', err);
     }
   }, []);
 
   const toggleAvailability = useCallback(async (id: string) => {
-    const item = menuItemsRef.current.find(i => i.id === id);
+    const item = menuItems.find(i => i.id === id);
     if (!item) return;
-    const snapshot = menuItemsRef.current;
-    const updatedItems = snapshot.map(i => i.id === id ? { ...i, available: !i.available } : i);
-    setMenuItems(updatedItems);
-    localStorage.setItem('local_menu_items', JSON.stringify(updatedItems));
     try {
-      await menuService.update(id, { available: !item.available });
+      const updatedItem = await menuService.update(id, { available: !item.available });
+      setMenuItems(prev => prev.map(i => i.id === id ? updatedItem : i));
     } catch (err) {
-      console.warn('[DataContext] Failed to toggle availability on Appwrite:', err);
+      console.error('[DataContext] Failed to toggle availability in SQLite:', err);
     }
-  }, []);
+  }, [menuItems]);
 
   // ── Orders mutations ──────────────────────────────────────────────────────────
 
-  const addOrder = useCallback(async (order: Omit<Order, 'id'>) => {
-    let newOrder: Order;
+  const addOrder = useCallback(async (order: Omit<Order, 'id'>): Promise<Order | null> => {
     try {
-      newOrder = await ordersService.create(order);
+      const newOrder = await ordersService.create(order);
+      setOrdersList(prev => [newOrder, ...prev]);
+      return newOrder;
     } catch (err) {
-      console.warn('[DataContext] Failed to create order on Appwrite, saving locally:', err);
-      newOrder = { ...order, id: `local-ord-${Date.now()}` };
+      console.error('[DataContext] Failed to create order in SQLite:', err);
+      return null;
     }
-    setOrdersList(prev => {
-      const updated = [newOrder, ...prev];
-      localStorage.setItem('local_orders', JSON.stringify(updated));
-      return updated;
-    });
   }, []);
 
   const updateOrderStatus = useCallback(async (id: string, status: OrderStatus) => {
-    const snapshot = ordersListRef.current;
-    const patch = { status };
-    addPendingWrite(id, patch);
-    const updatedOrders = snapshot.map(o => o.id === id ? { ...o, ...patch } : o);
-    setOrdersList(updatedOrders);
-    localStorage.setItem('local_orders', JSON.stringify(updatedOrders));
     try {
-      await ordersService.updateStatus(id, status);
+      const updatedOrder = await ordersService.updateStatus(id, status);
+      setOrdersList(prev => prev.map(o => o.id === id ? updatedOrder : o));
     } catch (err) {
-      console.warn('[DataContext] Failed to update order status on Appwrite:', err);
-    } finally {
-      removePendingWrite(id);
+      console.error('[DataContext] Failed to update order status in SQLite:', err);
     }
   }, []);
 
   const completeWithPayment = useCallback(async (id: string, method: 'Cash' | 'Card' = 'Cash') => {
-    const snapshot = ordersListRef.current;
-    const patch: Partial<Order> = { paymentStatus: 'Paid', paymentMethod: method };
-    addPendingWrite(id, patch);
-    const updatedOrders = snapshot.map(o => o.id === id ? { ...o, ...patch } : o);
-    setOrdersList(updatedOrders);
-    localStorage.setItem('local_orders', JSON.stringify(updatedOrders));
     try {
-      await ordersService.completeWithPayment(id, method);
+      const updatedOrder = await ordersService.completeWithPayment(id, method);
+      setOrdersList(prev => prev.map(o => o.id === id ? updatedOrder : o));
     } catch (err) {
-      console.warn('[DataContext] Failed to complete payment on Appwrite:', err);
-    } finally {
-      removePendingWrite(id);
+      console.error('[DataContext] Failed to complete payment in SQLite:', err);
     }
   }, []);
 
   const updateOrder = useCallback(async (id: string, data: Partial<Omit<Order, 'id'>>) => {
-    const snapshot = ordersListRef.current;
-    addPendingWrite(id, data as Partial<Order>);
-    const updatedOrders = snapshot.map(o => o.id === id ? { ...o, ...data } : o);
-    setOrdersList(updatedOrders);
-    localStorage.setItem('local_orders', JSON.stringify(updatedOrders));
     try {
-      await ordersService.update(id, data);
+      const updatedOrder = await ordersService.update(id, data);
+      setOrdersList(prev => prev.map(o => o.id === id ? updatedOrder : o));
     } catch (err) {
-      console.warn('[DataContext] Failed to update order on Appwrite:', err);
-    } finally {
-      removePendingWrite(id);
+      console.error('[DataContext] Failed to update order in SQLite:', err);
     }
   }, []);
 
   const deleteOrder = useCallback(async (id: string) => {
-    const snapshot = ordersListRef.current;
-    const updatedOrders = snapshot.filter(o => o.id !== id);
-    setOrdersList(updatedOrders);
-    localStorage.setItem('local_orders', JSON.stringify(updatedOrders));
     try {
       await ordersService.delete(id);
+      setOrdersList(prev => prev.filter(o => o.id !== id));
     } catch (err) {
-      console.warn('[DataContext] Failed to delete order on Appwrite:', err);
+      console.error('[DataContext] Failed to delete order in SQLite:', err);
     }
   }, []);
 
@@ -428,3 +230,4 @@ export function useOrdersContext(): OrdersState {
   if (!ctx) throw new Error('useOrdersContext must be used within DataProvider');
   return ctx.orders;
 }
+

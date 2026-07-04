@@ -8,21 +8,62 @@ import { useOrders } from '../hooks/useOrders';
 import { useMenu } from '../hooks/useMenu';
 import { PlusCircle } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
+import { useLanguage } from '../context/LanguageContext';
+import { clsx } from 'clsx';
+import { POSView } from '../components/orders/POSView';
 
-export default function Orders() {
-  // Use Appwrite for real-time data persistence
-  const { orders, error, updateOrderStatus, addOrder } = useOrders();
+import { filterItemsBySection, getOrderStatusForSection } from '../utils/orderSection';
+import { printKitchenReceipt, printDrinksReceipt } from '../utils/printReceipts';
+
+interface OrdersProps {
+  type?: 'all' | 'kitchen' | 'drinks';
+}
+
+export default function Orders({ type = 'all' }: OrdersProps) {
+  // Use local SQLite database for data persistence
+  const { orders, error, updateOrderStatus, updateOrder, addOrder } = useOrders();
+  const { t, language } = useLanguage();
   const { items: menuItems } = useMenu();
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [activeView, setActiveView] = useState<'pos' | 'tracker'>('pos');
+
+  const handleCreatePOSOrder = async (
+    tableId: string,
+    items: any[],
+    paymentStatus: 'Paid' | 'Unpaid',
+    paymentMethod?: 'Cash' | 'Card',
+    paidAmount?: number
+  ) => {
+    const totalAmount = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+    const newOrder = await addOrder({
+      orderNumber: '',
+      tableId,
+      items,
+      status: 'New',
+      paymentStatus,
+      paymentMethod,
+      totalAmount,
+      createdAt: new Date().toISOString(),
+      paidAt: paymentStatus === 'Paid' ? new Date().toISOString() : undefined,
+    });
+    if (newOrder) {
+      printKitchenReceipt(newOrder, language);
+      printDrinksReceipt(newOrder, language);
+    }
+    return newOrder;
+  };
   const [filterStatus, setFilterStatus] = useState<OrderStatus | 'All'>('All');
   const [isNewOrderOpen, setIsNewOrderOpen] = useState(false);
   const isMobile = useIsMobile();
 
+  const sectionOrders = useMemo(() => {
+    return orders.filter(order => filterItemsBySection(order.items, type).length > 0);
+  }, [orders, type]);
+
   const handleCreateOrder = async (tableId: string, items: OrderItem[]) => {
     const totalAmount = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-    const orderNumber = `ORD-${Date.now().toString(36).toUpperCase().slice(-6)}`;
-    await addOrder({
-      orderNumber,
+    const newOrder = await addOrder({
+      orderNumber: '',
       tableId,
       items,
       status: 'New',
@@ -30,19 +71,83 @@ export default function Orders() {
       totalAmount,
       createdAt: new Date().toISOString(),
     });
+    if (newOrder) {
+      printKitchenReceipt(newOrder, language);
+      printDrinksReceipt(newOrder, language);
+    }
   };
 
   const handleUpdateStatus = async (orderId: string, newStatus: OrderStatus) => {
     try {
-      await updateOrderStatus(orderId, newStatus);
-      
+      const order = orders.find(o => o.id === orderId);
+      if (!order) return;
+
+      // Update the status of items belonging to this section!
+      const updatedItems = order.items.map(item => {
+        const isMatch = type === 'all' || 
+                        (type === 'drinks' && filterItemsBySection([item], 'drinks').length > 0) || 
+                        (type === 'kitchen' && filterItemsBySection([item], 'kitchen').length > 0);
+                        
+        if (isMatch) {
+          return { ...item, status: newStatus };
+        }
+        return { ...item, status: item.status || order.status || 'New' };
+      });
+
+      // Calculate the new overall status for the order
+      let overallStatus = order.status;
+      if (newStatus === 'Cancelled') {
+        overallStatus = 'Cancelled';
+      } else if (newStatus === 'Completed') {
+        overallStatus = 'Completed';
+      } else {
+        const allStatuses = updatedItems.map(item => item.status || 'New');
+        if (allStatuses.every(s => s === 'Completed')) {
+          overallStatus = 'Completed';
+        } else if (allStatuses.every(s => s === 'Ready' || s === 'Completed')) {
+          overallStatus = 'Ready';
+        } else if (allStatuses.includes('Preparing') || allStatuses.includes('Ready')) {
+          overallStatus = 'Preparing';
+        } else {
+          overallStatus = 'New';
+        }
+      }
+
+      await updateOrder(orderId, {
+        items: updatedItems,
+        status: overallStatus
+      });
+
       // Update selected order if it's the one being changed
       if (selectedOrder && selectedOrder.id === orderId) {
-        setSelectedOrder({ ...selectedOrder, status: newStatus });
+        setSelectedOrder({ 
+          ...selectedOrder, 
+          items: updatedItems,
+          status: overallStatus 
+        });
       }
     } catch (err) {
       console.error('Failed to update order status:', err);
       alert('Failed to update order status');
+    }
+  };
+
+  const handleCardClick = (order: Order) => {
+    const cardStatus = getOrderStatusForSection(order, type);
+    if (cardStatus === 'New') {
+      handleUpdateStatus(order.id, 'Preparing');
+    } else if (cardStatus === 'Preparing') {
+      handleUpdateStatus(order.id, 'Ready');
+    } else if (cardStatus === 'Ready') {
+      handleUpdateStatus(order.id, 'Completed');
+    } else {
+      setSelectedOrder(order);
+    }
+  };
+
+  const handleCancelOrder = (orderId: string) => {
+    if (window.confirm('هل تريد إلغاء هذا الطلب؟ / Cancel this order?')) {
+      handleUpdateStatus(orderId, 'Cancelled');
     }
   };
 
@@ -71,64 +176,57 @@ export default function Orders() {
     const map: Record<string, Order[]> = {
       New: [], Preparing: [], Ready: [], Completed: [], Cancelled: [],
     };
-    for (const o of orders) {
-      if (map[o.status]) map[o.status].push(o);
+    for (const o of sectionOrders) {
+      const sectionStatus = getOrderStatusForSection(o, type);
+      if (map[sectionStatus]) map[sectionStatus].push(o);
+    }
+    // Sort active and cancelled columns by orderNumber numerically ascending
+    const statusesToSort: OrderStatus[] = ['New', 'Preparing', 'Ready', 'Cancelled'];
+    for (const status of statusesToSort) {
+      map[status].sort((a, b) => a.orderNumber.localeCompare(b.orderNumber, undefined, { numeric: true }));
     }
     // Completed sorted newest-first so the most recent payment is at the top
     map.Completed.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     return map;
-  }, [orders]);
+  }, [sectionOrders]);
 
   const filteredOrders = filterStatus === 'All'
-    ? orders
+    ? sectionOrders
     : (groupedOrders[filterStatus] ?? []);
 
-  return (
-    <div className="flex flex-col" style={{ height: 'calc(100dvh - 4rem)' }}>
-      {/* Header */}
-      <div className="mb-2 md:mb-4 shrink-0">
-        <div className="flex justify-between items-center mb-2">
-          <div>
-            <h1 className="text-lg md:text-2xl font-bold text-gray-900">Orders</h1>
-            <p className="text-xs md:text-sm text-gray-500">Manage order flow and track status.</p>
-          </div>
-          <button
-            onClick={() => setIsNewOrderOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-mocha-700 text-white rounded-xl text-sm font-semibold hover:bg-mocha-800 active:scale-95 transition-all shadow-sm"
-          >
-            <PlusCircle size={16} />
-            <span className="hidden sm:inline">New Order</span>
-            <span className="sm:hidden">New</span>
-          </button>
-        </div>
-        
-        {/* Filters */}
-        <div className="overflow-x-auto hide-scrollbar -mx-3 px-3 sm:mx-0 sm:px-0">
-          <div className="bg-white border border-gray-200 rounded-lg p-1 flex gap-1 w-max sm:w-auto">
-            {(['All', 'New', 'Preparing', 'Ready', 'Completed', 'Cancelled'] as const).map(status => (
-              <button
-                key={status}
-                onClick={() => setFilterStatus(status)}
-                className={`px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors whitespace-nowrap ${
-                  filterStatus === status 
-                    ? 'bg-gray-900 text-white shadow-sm' 
-                    : 'text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                {status}
-                {status !== 'All' && (
-                  <span className="ml-1 text-xs opacity-70">
-                    ({(groupedOrders[status] ?? []).length})
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
+  const titleMap = {
+    all: { title: 'Cashier Board', desc: 'Manage order flow, payments and track status.' },
+    kitchen: { title: 'Kitchen Board', desc: 'Food items preparing queue.' },
+    drinks: { title: 'Drinks Board', desc: 'Beverages and coffee preparing queue.' }
+  };
+  const { title, desc } = titleMap[type];
 
-      {/* Kanban Board - Desktop | Mobile: Simple list */}
-      {isMobile ? (
+  return (
+    <div className="flex flex-col" style={{ height: 'calc(100dvh - 2rem)' }}>
+      {/* Header */}
+      {!(type === 'all' && activeView === 'pos') && (
+        <div className="mb-2 md:mb-4 shrink-0">
+          <div className="flex justify-between items-center mb-2">
+            <div>
+              <h1 className="font-bold text-gray-900 text-lg md:text-2xl">
+                {t(title)}
+              </h1>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {type === 'all' && activeView === 'pos' ? (
+        <div className="flex-1 overflow-hidden">
+          <POSView
+            menuItems={menuItems}
+            onCreateOrder={handleCreatePOSOrder}
+            estimatedOrderNumber={String(orders.length + 1)}
+          />
+        </div>
+      ) : (
+        /* Kanban Board - Desktop | Mobile: Simple list */
+        isMobile ? (
         /* Mobile: Full-width list, padded for bottom nav */
         <div className="flex-1 overflow-y-auto space-y-2 pb-24">
           {filteredOrders.length === 0 ? (
@@ -141,7 +239,9 @@ export default function Orders() {
                 <OrderCard 
                   key={order.id} 
                   order={order} 
-                  onClick={setSelectedOrder}
+                  onClick={handleCardClick}
+                  onCancel={handleCancelOrder}
+                  type={type}
                 />
               ))}
             </AnimatePresence>
@@ -154,7 +254,7 @@ export default function Orders() {
             {columns.map(col => (
               <div key={col.status} className="flex-1 flex flex-col bg-gray-100/50 rounded-2xl p-3 border border-gray-200/50">
                 <div className="flex justify-between items-center mb-3">
-                  <h3 className="font-bold text-gray-700 text-sm">{col.title}</h3>
+                  <h3 className="font-bold text-gray-700 text-sm">{t(col.title)}</h3>
                   <span className="bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full text-xs font-bold">
                     {(groupedOrders[col.status] ?? []).length}
                   </span>
@@ -166,7 +266,9 @@ export default function Orders() {
                         <OrderCard 
                           key={order.id} 
                           order={order} 
-                          onClick={setSelectedOrder}
+                          onClick={handleCardClick}
+                          onCancel={handleCancelOrder}
+                          type={type}
                         />
                       ))}
                   </AnimatePresence>
@@ -177,7 +279,7 @@ export default function Orders() {
             {/* Completed Column */}
             <div className="flex-1 flex flex-col bg-gray-100/50 rounded-2xl p-3 border border-gray-200/50 opacity-75">
               <div className="flex justify-between items-center mb-3">
-                <h3 className="font-bold text-gray-500 text-sm">Completed</h3>
+                <h3 className="font-bold text-gray-500 text-sm">{t('Completed')}</h3>
                 <span className="bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full text-xs font-bold">
                   {groupedOrders.Completed.length}
                 </span>
@@ -189,7 +291,9 @@ export default function Orders() {
                       <OrderCard 
                         key={order.id} 
                         order={order} 
-                        onClick={setSelectedOrder}
+                        onClick={handleCardClick}
+                        onCancel={handleCancelOrder}
+                        type={type}
                       />
                     ))}
                 </AnimatePresence>
@@ -197,12 +301,13 @@ export default function Orders() {
             </div>
           </div>
         </div>
-      )}
+      ))}
 
       <OrderDetails 
         order={selectedOrder} 
         onClose={() => setSelectedOrder(null)}
         onUpdateStatus={handleUpdateStatus}
+        type={type}
       />
 
       <NewOrderModal

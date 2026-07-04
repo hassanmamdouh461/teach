@@ -5,9 +5,11 @@ import { MenuItemCard } from '../components/menu/MenuItemCard';
 import { MenuModal } from '../components/menu/MenuModal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMenu } from '../hooks/useMenu';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function Menu() {
-  // Use Appwrite for real-time data persistence
+  const { t, isRtl } = useLanguage();
+  // Use local SQLite database for data persistence
   const { items, loading, error, addItem, updateItem, deleteItem, toggleAvailability } = useMenu();
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
@@ -27,17 +29,17 @@ export default function Menu() {
       await toggleAvailability(id);
     } catch (error) {
       console.error('Failed to toggle status:', error);
-      alert('Failed to update item availability');
+      alert(t('Failed to update item availability'));
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to delete this item?')) {
+    if (confirm(t('Are you sure you want to delete this item?'))) {
       try {
         await deleteItem(id);
       } catch (error) {
         console.error('Failed to delete item:', error);
-        alert('Failed to delete item');
+        alert(t('Failed to delete item'));
       }
     }
   };
@@ -65,7 +67,7 @@ export default function Menu() {
       setIsModalOpen(false);
     } catch (error) {
       console.error('Failed to save item:', error);
-      alert('Failed to save item');
+      alert(t('Failed to save item'));
     }
   };
 
@@ -74,7 +76,7 @@ export default function Menu() {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
-          <p className="text-red-600 font-semibold mb-2">Failed to load menu</p>
+          <p className="text-red-600 font-semibold mb-2">{t('Failed to load menu')}</p>
           <p className="text-gray-500 text-sm">{error.message}</p>
         </div>
       </div>
@@ -86,15 +88,15 @@ export default function Menu() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
-          <h1 className="text-lg md:text-2xl font-bold text-gray-900">Menu Management</h1>
-          <p className="text-xs md:text-sm text-gray-500">Manage your coffee beverages and availability.</p>
+          <h1 className="text-lg md:text-2xl font-bold text-gray-900">{t('Menu Management')}</h1>
+          <p className="text-xs md:text-sm text-gray-500">{t('Manage your coffee beverages and availability.')}</p>
         </div>
         <button 
           onClick={handleAddNew}
           className="bg-mocha-700 hover:bg-mocha-800 text-white px-4 py-2.5 rounded-xl font-semibold flex items-center justify-center gap-2 shadow-lg shadow-mocha-500/20 transition-all active:scale-95 w-full sm:w-auto text-sm"
         >
           <Plus size={16} />
-          Add New Item
+          {t('Add New Item')}
         </button>
       </div>
 
@@ -112,20 +114,20 @@ export default function Menu() {
                   : 'bg-mocha-100 text-mocha-800 hover:bg-mocha-200'
               }`}
             >
-              {category}
+              {t(category)}
             </button>
           ))}
         </div>
 
         {/* Search */}
         <div className="relative w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <Search className={`absolute top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 ${isRtl ? 'right-3' : 'left-3'}`} />
           <input
             type="text"
-            placeholder="Search items..."
+            placeholder={t('Search items...')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-caramel focus:border-transparent text-sm"
+            className={`w-full py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-caramel focus:border-transparent text-sm ${isRtl ? 'pr-9 pl-4' : 'pl-9 pr-4'}`}
           />
         </div>
       </div>
@@ -153,8 +155,8 @@ export default function Menu() {
           <div className="bg-gray-100 w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3">
             <Search className="w-7 h-7 text-gray-400" />
           </div>
-          <p className="text-sm font-medium">No items found</p>
-          <p className="text-xs text-gray-400">Try adjusting your search or filters.</p>
+          <p className="text-sm font-medium">{t('No items found')}</p>
+          <p className="text-xs text-gray-400">{t('Try adjusting your search or filters.')}</p>
         </div>
       )}
 

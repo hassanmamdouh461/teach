@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { getAdminCredentials } from '../utils/settingsConfig';
 
 const LS_USERNAME_KEY = 'brewmaster_remembered_username';
 const LS_SESSION_KEY  = 'auth_session';
@@ -31,13 +32,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   });
 
-  // ── Registered accounts ────────────────────────────────────────────────
-  const ACCOUNTS: Array<{ username: string; password: string; name: string; role: 'admin' | 'staff' }> = [
-    { username: 'admin', password: '123', name: 'Admin User', role: 'admin' },
-  ];
-
   const login = async (username: string, password: string, rememberMe?: boolean) => {
     await new Promise(resolve => setTimeout(resolve, 800));
+    
+    const adminCreds = getAdminCredentials();
+    const ACCOUNTS: Array<{ username: string; password: string; name: string; role: 'admin' | 'staff' }> = [
+      { username: adminCreds.username, password: adminCreds.password, name: 'Admin User', role: 'admin' },
+    ];
     const match = ACCOUNTS.find(
       a => a.username.toLowerCase() === username.trim().toLowerCase() && a.password === password
     );

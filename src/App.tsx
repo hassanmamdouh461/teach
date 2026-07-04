@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
 import { LoadingScreen } from './components/ui/LoadingScreen';
+import { LanguageProvider } from './context/LanguageContext';
 
 import { DashboardLayout } from './components/layout/DashboardLayout';
 import Dashboard from './pages/Dashboard';
@@ -13,12 +14,13 @@ import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
 import PublicMenu from './pages/PublicMenu';
+import { PinProtection } from './components/auth/PinProtection';
 
 
 function ProtectedRoute() {
   const { isAuthenticated } = useAuth();
   if (!isAuthenticated) return <Navigate to="/login" replace />;
-  // DataProvider lives here so Appwrite is only fetched after the user is authenticated
+  // DataProvider lives here so data is only fetched after the user is authenticated
   return (
     <DataProvider>
       <Outlet />
@@ -35,10 +37,15 @@ function AppRoutes() {
         <Route element={<DashboardLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/menu" element={<Menu />} />
-          <Route path="/orders" element={<Orders />} />
+          <Route path="/orders" element={<Orders type="all" />} />
+          <Route path="/kitchen" element={<Orders type="kitchen" />} />
+          <Route path="/drinks" element={<Orders type="drinks" />} />
           <Route path="/payment" element={<Payment />} />
-          <Route path="/reports" element={<Reports />} />
-          <Route path="/settings" element={<Settings />} />
+          
+          <Route element={<PinProtection />}>
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/settings" element={<Settings />} />
+          </Route>
         </Route>
       </Route>
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
@@ -61,9 +68,11 @@ function App() {
 
   return (
     <AuthProvider>
-      <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-        <AppRoutes />
-      </Router>
+      <LanguageProvider>
+        <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <AppRoutes />
+        </Router>
+      </LanguageProvider>
     </AuthProvider>
   );
 }

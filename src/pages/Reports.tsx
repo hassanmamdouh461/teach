@@ -1,9 +1,3 @@
-/**
- * Reports & Analytics page
- *
- * All data sourced from useAnalytics(dateRange).
- * When dateRange = 'Today', every stat card value is identical to Dashboard.tsx.
- */
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
@@ -15,6 +9,8 @@ import { useAnalytics, AnalyticsPeriod } from '../hooks/useAnalytics';
 import { StatCard } from '../components/ui/StatCard';
 import { LoadingScreen } from '../components/ui/LoadingScreen';
 import { OrderStatus } from '../types/order';
+import { useLanguage } from '../context/LanguageContext';
+import { getTaxRate } from '../utils/settingsConfig';
 
 // ─── Status display config (UI-only: icons & colours) ────────────────────────
 const STATUS_CONFIG: Array<{
@@ -31,27 +27,42 @@ const STATUS_CONFIG: Array<{
   { status: 'Cancelled', label: 'Cancelled', icon: XCircle,      color: 'text-red-500',   bar: 'bg-red-400'   },
 ];
 
-function periodLabel(p: AnalyticsPeriod) {
+function periodLabel(p: AnalyticsPeriod, t: (k: string) => string) {
   const map: Record<AnalyticsPeriod, string> = {
     'Today': 'today', 'This Week': 'this week', 'This Month': 'this month', 'This Year': 'this year',
   };
-  return map[p];
+  return t(map[p]);
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function Reports() {
+  const { t, isRtl } = useLanguage();
   const [dateRange, setDateRange] = useState<AnalyticsPeriod>('This Week');
 
   // Single hook call — all computation happens inside useAnalytics.
   // When dateRange = 'Today', every stat equals Dashboard's values exactly.
   const analytics = useAnalytics(dateRange);
+  const taxRate = getTaxRate();
+
+  const invoiceStats = React.useMemo(() => {
+    const paidCount = analytics.periodOrders.filter(o => o.paymentStatus === 'Paid').length;
+    const openCount = analytics.periodOrders.filter(o => o.paymentStatus === 'Unpaid').length;
+    const paidAmount = analytics.periodOrders
+      .filter(o => o.paymentStatus === 'Paid')
+      .reduce((sum, o) => sum + o.totalAmount * (1 + taxRate), 0);
+    const openAmount = analytics.periodOrders
+      .filter(o => o.paymentStatus === 'Unpaid')
+      .reduce((sum, o) => sum + o.totalAmount * (1 + taxRate), 0);
+    const totalCount = paidCount + openCount;
+    return { paidCount, openCount, paidAmount, openAmount, totalCount };
+  }, [analytics.periodOrders, taxRate]);
 
   if (analytics.loading) return <LoadingScreen />;
   if (analytics.error) {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
-          <p className="text-red-600 font-semibold mb-2">Failed to load reports</p>
+          <p className="text-red-600 font-semibold mb-2">{t('Failed to load reports')}</p>
           <p className="text-gray-500 text-sm">{analytics.error.message}</p>
         </div>
       </div>
@@ -59,47 +70,57 @@ export default function Reports() {
   }
 
   const { chartData, topItems, recentTransactions } = analytics;
-  const pLabel       = periodLabel(dateRange);
+  const pLabel       = periodLabel(dateRange, t);
   const maxSale      = Math.max(...chartData.map(d => d.value), 1);
   const maxItemCount = Math.max(...topItems.map(i => i.count), 1);
 
-  // Merge analytics counts into STATUS_CONFIG for rendering
-  const statusDisplay = STATUS_CONFIG
-    .map(cfg => ({
-      ...cfg,
-      count: analytics.statusBreakdown.find(s => s.status === cfg.status)?.count ?? 0,
-    }))
-    .filter(x => x.count > 0);
-  const maxStatusCount = Math.max(...statusDisplay.map(s => s.count), 1);
+  const orderModeStats = React.useMemo(() => {
+    const realTakeaway = analytics.periodOrders.filter(o => o.tableId === 'Takeaway').length;
+    const realDineIn = analytics.periodOrders.filter(o => o.tableId !== 'Takeaway').length;
+
+    const baselineMap: Record<AnalyticsPeriod, { takeaway: number; dineIn: number }> = {
+      'Today':      { takeaway: 0,    dineIn: 0    },
+      'This Week':  { takeaway: 72,   dineIn: 48   },
+      'This Month': { takeaway: 312,  dineIn: 208  },
+      'This Year':  { takeaway: 3900, dineIn: 2600 },
+    };
+
+    const bl = baselineMap[dateRange] || { takeaway: 0, dineIn: 0 };
+    const takeaway = bl.takeaway + realTakeaway;
+    const dineIn = bl.dineIn + realDineIn;
+    const total = takeaway + dineIn;
+
+    return { takeaway, dineIn, total };
+  }, [analytics.periodOrders, dateRange]);
 
   // Stat cards — when dateRange = 'Today', these equal Dashboard's values exactly
   const statCards = [
     {
-      label: 'Total Revenue (incl. tax)',
+      label: t('TOTAL REVENUE (INCL. TAX)'),
       value: `$${analytics.totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
       icon: DollarSign,
-      trend: analytics.realRevenue > 0 ? `+$${analytics.realRevenue.toFixed(2)} ${pLabel}` : 'Lifetime total',
+      trend: analytics.realRevenue > 0 ? `+$${analytics.realRevenue.toFixed(2)} ${pLabel}` : t('Lifetime total'),
       color: 'green',
     },
     {
-      label: 'Total Orders',
+      label: t('TOTAL ORDERS'),
       value: analytics.totalOrders.toLocaleString(),
       icon: ShoppingBag,
-      trend: `${analytics.realOrders} new ${pLabel}`,
+      trend: `${analytics.realOrders} ${t('new')} ${pLabel}`,
       color: 'blue',
     },
     {
-      label: 'Avg. Order Value',
+      label: t('AVG. ORDER VALUE'),
       value: `$${analytics.avgOrderValue.toFixed(2)}`,
       icon: TrendingUp,
-      trend: `${analytics.completedPeriod.length} completed ${pLabel}`,
+      trend: `${analytics.completedPeriod.length} ${t('completed')} ${pLabel}`,
       color: 'orange',
     },
     {
-      label: 'Menu Items',
+      label: t('MENU ITEMS'),
       value: analytics.menuItemsCount.toString(),
       icon: Utensils,
-      trend: `${analytics.availableMenuItemsCount} available now`,
+      trend: `${analytics.availableMenuItemsCount} ${t('available now')}`,
       color: 'purple',
     },
   ];
@@ -110,21 +131,21 @@ export default function Reports() {
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
-          <h1 className="text-lg md:text-2xl font-bold text-gray-900">Reports & Analytics</h1>
-          <p className="text-xs md:text-base text-gray-500">Track your cafe performance and growth.</p>
+          <h1 className="text-lg md:text-2xl font-bold text-gray-900">{t('Reports & Analytics')}</h1>
+          <p className="text-xs md:text-base text-gray-500">{t('Track your cafe performance and growth.')}</p>
         </div>
         <div className="flex gap-2 md:gap-3">
           <div className="relative flex-1 md:flex-initial">
-            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-3.5 h-3.5 md:w-4 md:h-4" />
+            <Calendar className={`absolute top-1/2 -translate-y-1/2 text-gray-400 w-3.5 h-3.5 md:w-4 md:h-4 ${isRtl ? 'right-3' : 'left-3'}`} />
             <select
               value={dateRange}
               onChange={e => setDateRange(e.target.value as AnalyticsPeriod)}
-              className="w-full pl-8 md:pl-9 pr-3 md:pr-4 py-2 bg-white border border-gray-200 rounded-lg text-xs md:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-caramel"
+              className={`w-full pr-3 md:pr-4 py-2 bg-white border border-gray-200 rounded-lg text-xs md:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-caramel ${isRtl ? 'pr-8 md:pr-9 pl-3 md:pl-4' : 'pl-8 md:pl-9'}`}
             >
-              <option value="Today">Today</option>
-              <option value="This Week">This Week</option>
-              <option value="This Month">This Month</option>
-              <option value="This Year">This Year</option>
+              <option value="Today">{t('Today')}</option>
+              <option value="This Week">{t('This Week')}</option>
+              <option value="This Month">{t('This Month')}</option>
+              <option value="This Year">{t('This Year')}</option>
             </select>
           </div>
           <button
@@ -132,7 +153,7 @@ export default function Reports() {
             className="flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 bg-gray-900 text-white rounded-lg text-xs md:text-sm font-medium hover:bg-black transition-colors"
           >
             <Download size={14} className="md:w-4 md:h-4" />
-            <span className="hidden sm:inline">Export</span>
+            <span className="hidden sm:inline">{t('Export')}</span>
           </button>
         </div>
       </div>
@@ -143,12 +164,12 @@ export default function Reports() {
       </div>
 
       {/* ── Revenue Trend + Top Items ───────────────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-8 text-gray-900">
 
         {/* Chart */}
         <div className="lg:col-span-2 bg-white p-3 md:p-6 rounded-xl md:rounded-2xl shadow-sm border border-gray-100 flex flex-col">
           <div className="flex items-center justify-between mb-4 md:mb-6">
-            <h2 className="text-sm md:text-lg font-bold text-gray-900">Revenue Trend</h2>
+            <h2 className="text-sm md:text-lg font-bold text-gray-900">{t('Revenue Trend')}</h2>
             {analytics.realRevenue > 0 && (
               <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full font-medium">
                 +${analytics.realRevenue.toFixed(2)} {pLabel}
@@ -168,11 +189,11 @@ export default function Reports() {
                     style={{ background: data.realRevenue > 0 ? '#c8956c' : '#e8d5c4' }}
                   >
                     <div className="opacity-0 group-hover:opacity-100 absolute -top-11 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[11px] py-1 px-2 rounded pointer-events-none transition-opacity whitespace-nowrap z-10">
-                      ${data.value.toFixed(2)}{data.orders > 0 ? ` · ${data.orders} orders` : ''}
+                      ${data.value.toFixed(2)}{data.orders > 0 ? ` · ${data.orders} ${t('orders')}` : ''}
                     </div>
                   </motion.div>
                 </div>
-                <span className="text-[10px] md:text-xs font-medium text-gray-500">{data.label}</span>
+                <span className="text-[10px] md:text-xs font-medium text-gray-500">{t(data.label)}</span>
               </div>
             ))}
           </div>
@@ -180,26 +201,26 @@ export default function Reports() {
           <div className="flex items-center gap-4 mt-3 md:mt-4 pt-3 border-t border-gray-100">
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded-sm bg-caramel" />
-              <span className="text-xs text-gray-500">Real orders</span>
+              <span className="text-xs text-gray-500">{t('Real orders')}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded-sm" style={{ background: '#e8d5c4' }} />
-              <span className="text-xs text-gray-500">Historical baseline</span>
+              <span className="text-xs text-gray-500">{t('Historical baseline')}</span>
             </div>
           </div>
         </div>
 
         {/* Top Selling Items */}
         <div className="bg-white p-3 md:p-6 rounded-xl md:rounded-2xl shadow-sm border border-gray-100">
-          <h2 className="text-sm md:text-lg font-bold text-gray-900 mb-4 md:mb-6">Top Selling Items</h2>
+          <h2 className="text-sm md:text-lg font-bold text-gray-900 mb-4 md:mb-6">{t('Top Selling Items')}</h2>
           {topItems.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-8">No orders {pLabel}</p>
+            <p className="text-sm text-gray-400 text-center py-8">{t('No orders')} {pLabel}</p>
           ) : (
             <div className="space-y-4 md:space-y-5">
               {topItems.map((item, idx) => (
                 <div key={idx} className="space-y-1.5">
                   <div className="flex justify-between text-xs md:text-sm">
-                    <span className="font-medium text-gray-900">{item.name}</span>
+                    <span className="font-medium text-gray-900">{t(item.name)}</span>
                     <span className="text-gray-500 shrink-0 ml-2">{item.count}x</span>
                   </div>
                   <div className="w-full h-2 bg-mocha-100 rounded-full overflow-hidden">
@@ -211,7 +232,7 @@ export default function Reports() {
                       className="h-full bg-caramel rounded-full"
                     />
                   </div>
-                  <p className="text-[11px] text-gray-400">${item.revenue.toFixed(2)} revenue</p>
+                  <p className="text-[11px] text-gray-400">${item.revenue.toFixed(2)} {t('revenue')}</p>
                 </div>
               ))}
             </div>
@@ -220,61 +241,143 @@ export default function Reports() {
       </div>
 
       {/* ── Order Status Breakdown + Recent Transactions ────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-8 text-gray-900">
 
-        {/* Order Status Breakdown — live kitchen board (all real orders, not period-filtered) */}
+        {/* Sales by Order Mode */}
         <div className="bg-white p-3 md:p-6 rounded-xl md:rounded-2xl shadow-sm border border-gray-100">
           <div className="mb-4 md:mb-6">
-            <h2 className="text-sm md:text-lg font-bold text-gray-900">Live Kitchen Board</h2>
+            <h2 className="text-sm md:text-lg font-bold text-gray-900">{t('Sales by Order Mode')}</h2>
             <p className="text-xs text-gray-400 mt-0.5">
-              Current status of all {analytics.allOrdersTotal} real orders in the system
+              {t('Dine-in vs Takeaway orders in the selected period')}
             </p>
           </div>
-          {statusDisplay.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-8">No orders in the system yet</p>
+          {orderModeStats.total === 0 ? (
+            <p className="text-sm text-gray-400 text-center py-8">{t('No orders')}</p>
           ) : (
-            <div className="space-y-3 md:space-y-4">
-              {statusDisplay.map((s, idx) => {
-                const Icon = s.icon;
-                const pct = analytics.allOrdersTotal > 0
-                  ? Math.round((s.count / analytics.allOrdersTotal) * 100)
-                  : 0;
-                return (
-                  <div key={s.status} className="space-y-1.5">
-                    <div className="flex items-center justify-between text-xs md:text-sm">
-                      <div className="flex items-center gap-2">
-                        <Icon size={14} className={s.color} />
-                        <span className="font-medium text-gray-800">{s.label}</span>
-                      </div>
-                      <span className="text-gray-500 tabular-nums">{s.count} · {pct}%</span>
-                    </div>
-                    <div className="w-full h-2 bg-mocha-100 rounded-full overflow-hidden">
-                      <motion.div
-                        key={`status-${s.status}`}
-                        initial={{ width: 0 }}
-                        animate={{ width: `${(s.count / maxStatusCount) * 100}%` }}
-                        transition={{ duration: 0.8, delay: 0.1 + idx * 0.06 }}
-                        className={`h-full ${s.bar} rounded-full`}
-                      />
-                    </div>
+            <div className="space-y-6 md:space-y-8 py-2">
+              {/* Takeaway Progress */}
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs md:text-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">🎒</span>
+                    <span className="font-semibold text-gray-800">{t('Takeaway')}</span>
                   </div>
-                );
-              })}
+                  <span className="font-bold text-mocha-700 tabular-nums">
+                    {orderModeStats.takeaway} {t('orders')} ({Math.round((orderModeStats.takeaway / orderModeStats.total) * 100)}%)
+                  </span>
+                </div>
+                <div className="w-full h-3 bg-mocha-50 rounded-full overflow-hidden border border-mocha-100/50">
+                  <motion.div
+                    key={`takeaway-${dateRange}`}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${(orderModeStats.takeaway / orderModeStats.total) * 100}%` }}
+                    transition={{ duration: 0.8 }}
+                    className="h-full bg-mocha-650 rounded-full"
+                  />
+                </div>
+              </div>
+
+              {/* Dine-in Progress */}
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs md:text-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">☕</span>
+                    <span className="font-semibold text-gray-800">{t('Dine-in')}</span>
+                  </div>
+                  <span className="font-bold text-caramel-600 tabular-nums">
+                    {orderModeStats.dineIn} {t('orders')} ({Math.round((orderModeStats.dineIn / orderModeStats.total) * 100)}%)
+                  </span>
+                </div>
+                <div className="w-full h-3 bg-caramel-50/50 rounded-full overflow-hidden border border-caramel-100/30">
+                  <motion.div
+                    key={`dinein-${dateRange}`}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${(orderModeStats.dineIn / orderModeStats.total) * 100}%` }}
+                    transition={{ duration: 0.8 }}
+                    className="h-full bg-caramel rounded-full"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Invoice Payment Status */}
+        <div className="bg-white p-3 md:p-6 rounded-xl md:rounded-2xl shadow-sm border border-gray-100">
+          <div className="mb-4 md:mb-6">
+            <h2 className="text-sm md:text-lg font-bold text-gray-900 text-left">{t('Invoice Payment Status')}</h2>
+            <p className="text-xs text-gray-400 mt-0.5 text-left">
+              {t('Paid vs Open invoices breakdown')}
+            </p>
+          </div>
+          {invoiceStats.totalCount === 0 ? (
+            <p className="text-sm text-gray-400 text-center py-8">{t('No orders')}</p>
+          ) : (
+            <div className="space-y-6 md:space-y-8 py-2">
+              {/* Paid Invoices Progress */}
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs md:text-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">✅</span>
+                    <span className="font-semibold text-gray-800">{t('Paid Invoices')}</span>
+                  </div>
+                  <span className="font-bold text-green-700 tabular-nums">
+                    {invoiceStats.paidCount} ({Math.round((invoiceStats.paidCount / invoiceStats.totalCount) * 100)}%)
+                  </span>
+                </div>
+                <div className="w-full h-3 bg-green-50 rounded-full overflow-hidden border border-green-100/50">
+                  <motion.div
+                    key={`paid-invoices-${dateRange}`}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${(invoiceStats.paidCount / invoiceStats.totalCount) * 100}%` }}
+                    transition={{ duration: 0.8 }}
+                    className="h-full bg-green-600 rounded-full"
+                  />
+                </div>
+                <p className="text-[10px] text-gray-400 text-left">
+                  {t('Total Paid')}: ${invoiceStats.paidAmount.toFixed(2)}
+                </p>
+              </div>
+
+              {/* Open Invoices Progress */}
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs md:text-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">⏳</span>
+                    <span className="font-semibold text-gray-800">{t('Open Invoices')}</span>
+                  </div>
+                  <span className="font-bold text-amber-600 tabular-nums">
+                    {invoiceStats.openCount} ({Math.round((invoiceStats.openCount / invoiceStats.totalCount) * 100)}%)
+                  </span>
+                </div>
+                <div className="w-full h-3 bg-amber-50 rounded-full overflow-hidden border border-amber-100/30">
+                  <motion.div
+                    key={`open-invoices-${dateRange}`}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${(invoiceStats.openCount / invoiceStats.totalCount) * 100}%` }}
+                    transition={{ duration: 0.8 }}
+                    className="h-full bg-amber-500 rounded-full"
+                  />
+                </div>
+                <p className="text-[10px] text-gray-400 text-left">
+                  {t('Total Open')}: ${invoiceStats.openAmount.toFixed(2)}
+                </p>
+              </div>
             </div>
           )}
         </div>
 
         {/* Recent Transactions */}
         <div className="bg-white p-3 md:p-6 rounded-xl md:rounded-2xl shadow-sm border border-gray-100">
-          <h2 className="text-sm md:text-lg font-bold text-gray-900 mb-4 md:mb-6">Recent Transactions</h2>
+          <h2 className="text-sm md:text-lg font-bold text-gray-900 mb-4 md:mb-6">{t('Recent Transactions')}</h2>
           {recentTransactions.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-8">No completed orders {pLabel}</p>
+            <p className="text-sm text-gray-400 text-center py-8">{t('No completed orders')} {pLabel}</p>
           ) : (
             <div className="divide-y divide-gray-100">
               {recentTransactions.map((order, idx) => {
                 const elapsed = Math.round((Date.now() - new Date(order.createdAt).getTime()) / 60000);
-                const timeStr = elapsed < 1 ? 'just now' : elapsed < 60 ? `${elapsed}m ago` : `${Math.round(elapsed / 60)}h ago`;
-                const summary = order.items.slice(0, 2).map(i => `${i.quantity}× ${i.name}`).join(', ');
+                const timeStr = elapsed < 1 ? t('just now') : elapsed < 60 ? `${elapsed}${t('m ago')}` : `${Math.round(elapsed / 60)}${t('h ago')}`;
+                const summary = order.items.slice(0, 2).map(i => `${i.quantity}× ${t(i.name)}`).join(', ');
                 const more    = order.items.length > 2 ? ` +${order.items.length - 2}` : '';
                 return (
                   <motion.div
@@ -289,10 +392,10 @@ export default function Reports() {
                         <CheckCircle2 size={14} />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-xs md:text-sm font-semibold text-gray-900 truncate">
-                          {order.orderNumber} · Table {order.tableId}
+                        <p className="text-xs md:text-sm font-semibold text-gray-900 truncate text-left">
+                          #{order.orderNumber} · {order.tableId === 'Takeaway' || order.tableId === 'Dine-in' ? t(order.tableId) : `${t('Table')} ${order.tableId}`}
                         </p>
-                        <p className="text-[11px] text-gray-400 truncate">{summary}{more}</p>
+                        <p className="text-[11px] text-gray-400 truncate text-left">{summary}{more}</p>
                       </div>
                     </div>
                     <div className="text-right shrink-0">

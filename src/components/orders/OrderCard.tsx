@@ -1,13 +1,18 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Order, OrderStatus } from '../../types/order';
-import { Clock, CheckCircle2, ChefHat, AlertCircle, ShoppingBag, XCircle } from 'lucide-react';
+import { Clock, CheckCircle2, ChefHat, Coffee, AlertCircle, ShoppingBag, XCircle, X } from 'lucide-react';
 import { clsx } from 'clsx';
+
+import { filterItemsBySection, getOrderStatusForSection } from '../../utils/orderSection';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface OrderCardProps {
   order: Order;
   onClick: (order: Order) => void;
+  onCancel?: (orderId: string) => void;
   selected?: boolean;
+  type?: 'all' | 'kitchen' | 'drinks';
 }
 
 const statusColors: Record<OrderStatus, { bg: string; text: string; gradient: string; icon: string }> = {
@@ -38,7 +43,7 @@ const statusColors: Record<OrderStatus, { bg: string; text: string; gradient: st
   Cancelled: { 
     bg: 'bg-red-50', 
     text: 'text-red-600', 
-   gradient: 'from-red-400 to-rose-400',
+    gradient: 'from-red-400 to-rose-400',
     icon: 'text-red-500'
   },
 };
@@ -52,9 +57,17 @@ const statusIcons: Record<OrderStatus, React.ElementType> = {
 };
 
 export const OrderCard = React.forwardRef<HTMLDivElement, OrderCardProps>(
-  function OrderCard({ order, onClick, selected }, ref) {
-  const StatusIcon = statusIcons[order.status];
-  const colors = statusColors[order.status];
+  function OrderCard({ order, onClick, onCancel, selected, type = 'all' }, ref) {
+  const { t } = useLanguage();
+  const cardStatus = getOrderStatusForSection(order, type);
+  const StatusIcon = statusIcons[cardStatus];
+  const colors = statusColors[cardStatus];
+  const items = filterItemsBySection(order.items, type);
+  
+  const kitchenItems = filterItemsBySection(order.items, 'kitchen');
+  const drinksItems = filterItemsBySection(order.items, 'drinks');
+  const hasKitchen = kitchenItems.length > 0;
+  const hasDrinks = drinksItems.length > 0;
 
   return (
     <motion.div
@@ -88,21 +101,36 @@ export const OrderCard = React.forwardRef<HTMLDivElement, OrderCardProps>(
             </span>
           </div>
           
-          {/* Status badge - softer */}
-          <div className={clsx(
-            "px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm border",
-            colors.bg,
-            colors.text,
-            "border-current/10"
-          )}>
-            <StatusIcon size={14} className={colors.icon} />
-            {order.status}
+          <div className="flex items-center gap-2">
+            {/* Status badge - softer */}
+            <div className={clsx(
+              "px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm border",
+              colors.bg,
+              colors.text,
+              "border-current/10"
+            )}>
+              <StatusIcon size={14} className={colors.icon} />
+              {cardStatus}
+            </div>
+
+            {onCancel && order.status !== 'Cancelled' && order.status !== 'Completed' && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCancel(order.id);
+                }}
+                className="p-1 rounded-full text-gray-400 hover:text-red-600 hover:bg-red-50 hover:border-red-200 transition-colors border border-gray-200/60 z-20"
+                title="Cancel Order"
+              >
+                <X size={16} />
+              </button>
+            )}
           </div>
         </div>
 
         {/* Items */}
         <div className="space-y-2 mb-4">
-          {order.items && order.items.length > 0 ? order.items.slice(0, 3).map((item, idx) => (
+          {items && items.length > 0 ? items.map((item, idx) => (
             <div key={idx} className="flex justify-between text-sm items-center">
               <span className="text-gray-600">
                 <span className="inline-flex items-center justify-center min-w-[24px] h-6 rounded-lg bg-mocha-50 text-mocha-700 font-bold text-xs mr-2 px-1.5 border border-mocha-100/50">
@@ -114,23 +142,42 @@ export const OrderCard = React.forwardRef<HTMLDivElement, OrderCardProps>(
           )) : (
             <div className="text-xs text-gray-400 italic">No items</div>
           )}
-          {order.items && order.items.length > 3 && (
-            <p className="text-xs text-gray-400 italic font-medium pl-9">
-              +{order.items.length - 3} more items...
-            </p>
-          )}
         </div>
 
         {/* Footer */}
-        <div className="flex items-center text-xs pt-3 border-t border-gray-100">
-          <div className="flex items-center gap-1.5 text-gray-500">
-            <div className="p-1 rounded-lg bg-gray-100">
-              <Clock size={12} />
+        <div className="flex flex-col gap-2 pt-3 border-t border-gray-100">
+          <div className="flex justify-between items-center text-xs">
+            {/* Time */}
+            <div className="flex items-center gap-1.5 text-gray-500">
+              <div className="p-1 rounded-lg bg-gray-100">
+                <Clock size={12} />
+              </div>
+              <span className="font-medium">
+                {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </span>
             </div>
-            <span className="font-medium">
-              {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            </span>
           </div>
+
+          {/* Destinations */}
+          {(hasKitchen || hasDrinks) && (
+            <div className="flex items-center gap-1.5 text-[11px] font-medium text-gray-500 bg-gray-50/80 p-1.5 rounded-lg border border-gray-100">
+              <span className="text-gray-400">{t('الوجهة:')}</span>
+              <div className="flex flex-wrap gap-1">
+                {hasKitchen && (
+                  <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded border border-amber-100">
+                    <ChefHat size={10} />
+                    {t('المطبخ')}
+                  </span>
+                )}
+                {hasDrinks && (
+                  <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded border border-blue-100">
+                    <Coffee size={10} />
+                    {t('المشروبات')}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </motion.div>
