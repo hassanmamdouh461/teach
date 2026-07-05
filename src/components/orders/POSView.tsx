@@ -129,7 +129,10 @@ export function POSView({ menuItems, onCreateOrder, estimatedOrderNumber }: POSV
 
   // Quick cash buttons
   const handleQuickCash = (amount: number) => {
-    setReceivedAmount(String(amount));
+    setReceivedAmount(prev => {
+      const current = parseFloat(prev) || 0;
+      return String(current + amount);
+    });
   };
 
   // Reset current invoice
@@ -207,7 +210,7 @@ export function POSView({ menuItems, onCreateOrder, estimatedOrderNumber }: POSV
       {/* 1. LEFT COLUMN: Payments & Calculator (Width 28%) - Only visible for Takeaway */}
       {orderMode === 'Takeaway' && (
         <div className="w-full lg:w-[28%] bg-white p-2.5 md:p-3 rounded-2xl border border-gray-200/80 shadow-sm flex flex-col justify-between overflow-hidden">
-          <div className="space-y-1.5 md:space-y-2">
+          <div className="space-y-1 md:space-y-1.5">
             <h2 className="font-extrabold text-xs md:text-sm text-mocha-800 border-b border-gray-100 pb-1.5 shrink-0">
               <span className="font-sans">{t('Payment & Invoice')}</span>
             </h2>
@@ -216,7 +219,7 @@ export function POSView({ menuItems, onCreateOrder, estimatedOrderNumber }: POSV
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
                 <label className="text-xs text-gray-500 font-extrabold"><span className="font-sans">{t('Total Due')}</span></label>
-                <div className="w-full bg-gray-950 text-amber-400 font-mono text-xl md:text-2xl font-black px-2.5 py-1 rounded-xl border border-gray-800 flex justify-between items-center select-all h-[46px]">
+                <div className="w-full bg-gray-950 text-amber-400 font-mono text-lg md:text-xl font-black px-2.5 py-0.5 rounded-xl border border-gray-800 flex justify-between items-center select-all h-[40px]">
                   <span>{grandTotal.toFixed(2)}</span>
                   <span className="text-xs text-gray-500 font-sans font-bold">{isRtl ? 'ج.م' : 'EGP'}</span>
                 </div>
@@ -224,7 +227,7 @@ export function POSView({ menuItems, onCreateOrder, estimatedOrderNumber }: POSV
 
               <div className="space-y-1">
                 <label className="text-xs text-gray-500 font-extrabold"><span className="font-sans">{t('Received Amount')}</span></label>
-                <div className="w-full bg-gray-950 text-emerald-400 font-mono text-xl md:text-2xl font-black px-2.5 py-1 rounded-xl border border-gray-800 flex justify-between items-center select-all h-[46px]">
+                <div className="w-full bg-gray-950 text-emerald-400 font-mono text-lg md:text-xl font-black px-2.5 py-0.5 rounded-xl border border-gray-800 flex justify-between items-center select-all h-[40px]">
                   <span>{receivedAmount}</span>
                   <span className="text-xs text-gray-500 font-sans font-bold">{isRtl ? 'ج.م' : 'EGP'}</span>
                 </div>
@@ -234,7 +237,7 @@ export function POSView({ menuItems, onCreateOrder, estimatedOrderNumber }: POSV
             {/* Change for Customer */}
             <div className="space-y-1">
               <label className="text-xs text-gray-500 font-extrabold"><span className="font-sans">{t('Change for Customer')}</span></label>
-              <div className="w-full bg-gray-950 text-amber-400 font-mono text-xl md:text-2xl font-black px-2.5 py-1 rounded-xl border border-gray-800 flex justify-between items-center h-[46px]">
+              <div className="w-full bg-gray-950 text-amber-400 font-mono text-lg md:text-xl font-black px-2.5 py-0.5 rounded-xl border border-gray-800 flex justify-between items-center h-[40px]">
                 <span>{changeAmount.toFixed(2)}</span>
                 <span className="text-xs text-gray-500 font-sans font-bold">{isRtl ? 'ج.م' : 'EGP'}</span>
               </div>
@@ -246,7 +249,7 @@ export function POSView({ menuItems, onCreateOrder, estimatedOrderNumber }: POSV
                 <button
                   key={amt}
                   onClick={() => handleQuickCash(amt)}
-                  className="bg-gray-100 hover:bg-gray-200 active:scale-95 transition-all text-sm sm:text-base font-black text-gray-800 py-1.5 rounded-xl border border-gray-200"
+                  className="bg-gray-100 hover:bg-gray-200 active:scale-95 transition-all text-sm sm:text-base font-black text-gray-800 py-2 rounded-xl border border-gray-200 shadow-sm"
                 >
                   {amt}
                 </button>
@@ -259,67 +262,43 @@ export function POSView({ menuItems, onCreateOrder, estimatedOrderNumber }: POSV
                 <button
                   key={num}
                   onClick={() => handleKeypadPress(num)}
-                  className="bg-gray-50 hover:bg-gray-100 active:scale-95 transition-all text-base sm:text-lg font-black text-gray-900 py-2 rounded-xl border border-gray-200"
+                  className="bg-gray-50 hover:bg-gray-100 active:scale-95 transition-all text-lg font-black text-gray-900 py-2.5 rounded-xl border border-gray-200 shadow-sm"
                 >
                   {num}
                 </button>
               ))}
               <button
                 onClick={() => handleKeypadPress('C')}
-                className="col-span-3 bg-red-500 hover:bg-red-600 text-white text-base font-black py-2 rounded-xl border border-red-600 shadow-sm active:scale-95 transition-all"
+                className="col-span-3 bg-red-500 hover:bg-red-600 text-white text-lg font-black py-2.5 rounded-xl border border-red-600 shadow-sm active:scale-95 transition-all"
               >
                 C
               </button>
             </div>
 
-            {/* Payment Method & Status Selection */}
-            <div className="grid grid-cols-2 gap-2 mt-1 border-t border-gray-100 pt-2 shrink-0">
+            {/* Payment Method Selection (Moved down, styled larger & full width) */}
+            <div className="mt-2.5 border-t border-gray-100 pt-2 shrink-0">
               <div className="space-y-1">
-                <label className="text-[10px] md:text-xs text-gray-500 font-extrabold uppercase"><span className="font-sans">{t('Payment Method')}</span></label>
-                <div className="flex bg-gray-100 rounded-lg p-0.5 border border-gray-200">
+                <label className="text-[11px] md:text-xs text-gray-500 font-extrabold uppercase"><span className="font-sans">{t('Payment Method')}</span></label>
+                <div className="flex bg-gray-100 rounded-xl p-1 border border-gray-200">
                   <button
                     onClick={() => setPaymentMethod('Cash')}
                     className={clsx(
-                      "flex-1 py-1.5 rounded-md text-xs sm:text-sm font-black transition-all flex items-center justify-center gap-1",
+                      "flex-1 py-2 rounded-lg text-xs sm:text-sm font-black transition-all flex items-center justify-center gap-1.5",
                       paymentMethod === 'Cash' ? "bg-white text-mocha-700 shadow-sm" : "text-gray-500 hover:bg-white/30"
                     )}
                   >
-                    <DollarSign size={14} />
+                    <DollarSign size={16} />
                     <span className="font-sans">{t('Cash')}</span>
                   </button>
                   <button
                     onClick={() => setPaymentMethod('Card')}
                     className={clsx(
-                      "flex-1 py-1.5 rounded-md text-xs sm:text-sm font-black transition-all flex items-center justify-center gap-1",
+                      "flex-1 py-2 rounded-lg text-xs sm:text-sm font-black transition-all flex items-center justify-center gap-1.5",
                       paymentMethod === 'Card' ? "bg-white text-mocha-700 shadow-sm" : "text-gray-500 hover:bg-white/30"
                     )}
                   >
-                    <CreditCard size={14} />
+                    <CreditCard size={16} />
                     <span className="font-sans">{t('Card')}</span>
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] md:text-xs text-gray-500 font-extrabold uppercase"><span className="font-sans">{t('Payment Status')}</span></label>
-                <div className="flex bg-gray-100 rounded-lg p-0.5 border border-gray-200">
-                  <button
-                    onClick={() => setPaymentStatus('Unpaid')}
-                    className={clsx(
-                      "flex-1 py-1.5 rounded-md text-xs sm:text-sm font-black transition-all flex items-center justify-center gap-1",
-                      paymentStatus === 'Unpaid' ? "bg-red-500 text-white shadow-sm" : "text-gray-500 hover:bg-white/30"
-                    )}
-                  >
-                    <span className="font-sans">{t('Unpaid')}</span>
-                  </button>
-                  <button
-                    onClick={() => setPaymentStatus('Paid')}
-                    className={clsx(
-                      "flex-1 py-1.5 rounded-md text-xs sm:text-sm font-black transition-all flex items-center justify-center gap-1",
-                      paymentStatus === 'Paid' ? "bg-green-600 text-white shadow-sm" : "text-gray-500 hover:bg-white/30"
-                    )}
-                  >
-                    <span className="font-sans">{t('Paid')}</span>
                   </button>
                 </div>
               </div>

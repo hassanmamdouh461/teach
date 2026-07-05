@@ -120,6 +120,13 @@ const translations: Record<string, Record<Language, string>> = {
   'Print Kitchen Ticket': { en: 'Print Kitchen Ticket', ar: 'طباعة بون المطبخ' },
   'Print Drinks Ticket': { en: 'Print Drinks Ticket', ar: 'طباعة بون المشروبات' },
   'Print Invoice': { en: 'Print Invoice', ar: 'طباعة الفاتورة' },
+  'Payment Methods': { en: 'Payment Methods', ar: 'طرق الدفع' },
+  'Breakdown of paid revenue': { en: 'Breakdown of paid revenue', ar: 'تفصيل الإيرادات المدفوعة' },
+  'Total Cash': { en: 'Total Cash', ar: 'إجمالي الكاش' },
+  'Total Card': { en: 'Total Card', ar: 'إجمالي الفيزا' },
+  'Clear Filter': { en: 'Clear Filter', ar: 'مسح الفلتر' },
+  'From Time': { en: 'From Time', ar: 'من وقت' },
+  'To Time': { en: 'To Time', ar: 'إلى وقت' },
 
   // Alerts & Confirms
   'Cancel this order?': { en: 'Cancel this order?', ar: 'هل تريد إلغاء هذا الطلب؟' },

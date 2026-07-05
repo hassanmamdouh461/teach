@@ -14,6 +14,9 @@ export default function Payment() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterDate, setFilterDate] = useState('');
+  const [filterStartTime, setFilterStartTime] = useState('');
+  const [filterEndTime, setFilterEndTime] = useState('');
 
   const [activeTab, setActiveTab] = useState<'pending' | 'paid'>('pending');
 
@@ -49,10 +52,32 @@ export default function Payment() {
   const STATUS_PRIORITY: Record<string, number> = { Ready: 1, Preparing: 2, New: 3, Completed: 4, Cancelled: 5 };
 
   const filteredOrders = useMemo(() => {
-    const list = orders.filter(o =>
-      o.tableId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      o.orderNumber.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const list = orders.filter(o => {
+      const matchesSearch = o.tableId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            o.orderNumber.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const orderDate = new Date(o.paidAt || o.createdAt).toLocaleDateString('en-CA'); // YYYY-MM-DD local time
+      const matchesDate = !filterDate || orderDate === filterDate;
+      
+      let matchesTime = true;
+      if (filterStartTime || filterEndTime) {
+        const orderDateObj = new Date(o.paidAt || o.createdAt);
+        const orderMinutes = orderDateObj.getHours() * 60 + orderDateObj.getMinutes();
+        
+        if (filterStartTime) {
+          const [sH, sM] = filterStartTime.split(':').map(Number);
+          const startMinutes = sH * 60 + sM;
+          if (orderMinutes < startMinutes) matchesTime = false;
+        }
+        if (filterEndTime) {
+          const [eH, eM] = filterEndTime.split(':').map(Number);
+          const endMinutes = eH * 60 + eM;
+          if (orderMinutes > endMinutes) matchesTime = false;
+        }
+      }
+      
+      return matchesSearch && matchesDate && matchesTime;
+    });
     
     if (activeTab === 'pending') {
       return list.sort((a, b) => {
@@ -72,7 +97,7 @@ export default function Payment() {
         return timeB - timeA;
       });
     }
-  }, [orders, searchTerm, activeTab]);
+  }, [orders, searchTerm, activeTab, filterDate, filterStartTime, filterEndTime]);
 
   // Show error state
   if (error) {
@@ -148,16 +173,65 @@ export default function Payment() {
         </button>
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-full md:max-w-md">
-        <Search className={`absolute top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 md:w-5 md:h-5 ${isRtl ? 'right-3' : 'left-3'}`} />
-        <input
-          type="text"
-          placeholder={t('Search by Table or Order ID...')}
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className={`w-full py-2.5 md:py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-caramel focus:border-transparent shadow-sm text-sm md:text-base ${isRtl ? 'pr-9 md:pr-10 pl-4' : 'pl-9 md:pl-10 pr-4'}`}
-        />
+      {/* Filters (Search, Date Calendar, & Time Range) */}
+      <div className="flex flex-col xl:flex-row gap-3 items-stretch xl:items-center">
+        {/* Search */}
+        <div className="relative flex-1 max-w-full xl:max-w-md">
+          <Search className={`absolute top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 md:w-5 md:h-5 ${isRtl ? 'right-3' : 'left-3'}`} />
+          <input
+            type="text"
+            placeholder={t('Search by Table or Order ID...')}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className={`w-full py-2.5 md:py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-caramel focus:border-transparent shadow-sm text-sm md:text-base ${isRtl ? 'pr-9 md:pr-10 pl-4' : 'pl-9 md:pl-10 pr-4'}`}
+          />
+        </div>
+
+        {/* Date and Time Range Filters */}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Date Calendar Picker */}
+          <div className="flex items-center gap-2">
+            <input
+              type="date"
+              value={filterDate}
+              onChange={(e) => setFilterDate(e.target.value)}
+              className="py-2.5 md:py-3 px-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-caramel focus:border-transparent shadow-sm text-sm md:text-base text-gray-700 min-w-[150px]"
+            />
+          </div>
+
+          {/* Time Range Pickers */}
+          <div className="flex items-center gap-2 bg-white px-3 py-2.5 md:py-3 border border-gray-200 rounded-xl shadow-sm text-sm md:text-base text-gray-700">
+            <span className="text-gray-500 font-medium text-xs md:text-sm">{t('From Time')}:</span>
+            <input
+              type="time"
+              value={filterStartTime}
+              onChange={(e) => setFilterStartTime(e.target.value)}
+              className="bg-transparent border-none p-0 focus:outline-none text-gray-800 font-mono text-xs md:text-sm"
+            />
+            <span className="text-gray-300">|</span>
+            <span className="text-gray-500 font-medium text-xs md:text-sm">{t('To Time')}:</span>
+            <input
+              type="time"
+              value={filterEndTime}
+              onChange={(e) => setFilterEndTime(e.target.value)}
+              className="bg-transparent border-none p-0 focus:outline-none text-gray-800 font-mono text-xs md:text-sm"
+            />
+          </div>
+
+          {/* Clear Button */}
+          {(filterDate || filterStartTime || filterEndTime) && (
+            <button
+              onClick={() => {
+                setFilterDate('');
+                setFilterStartTime('');
+                setFilterEndTime('');
+              }}
+              className="py-2.5 md:py-3 px-3 text-xs font-bold bg-red-50 text-red-650 hover:bg-red-100 rounded-xl border border-red-200 transition-colors shadow-sm active:scale-95"
+            >
+              {t('Clear Filter')}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Orders Grid */}
