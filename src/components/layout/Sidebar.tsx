@@ -10,7 +10,8 @@ import {
   ChefHat,
   ChevronLeft,
   ChevronRight,
-  X
+  X,
+  Users
 } from 'lucide-react';
 import { SidebarItem } from './SidebarItem';
 import { clsx } from 'clsx';
@@ -90,6 +91,7 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
         <SidebarItem icon={ClipboardList} label={t('Cashier Board')} to="/orders" collapsed={!isMobile && collapsed} onClick={handleItemClick} />
         <SidebarItem icon={CreditCard} label={t('Payment & Invoice')} to="/payment" collapsed={!isMobile && collapsed} onClick={handleItemClick} />
         <SidebarItem icon={UtensilsCrossed} label={t('Menu')} to="/menu" collapsed={!isMobile && collapsed} onClick={handleItemClick} />
+        <SidebarItem icon={Users} label={t('Customers')} to="/customers" collapsed={!isMobile && collapsed} onClick={handleItemClick} />
         <SidebarItem icon={BarChart3} label={t('Reports')} to="/reports" collapsed={!isMobile && collapsed} onClick={handleItemClick} />
         
         <div className="my-4 border-t border-gray-800" />

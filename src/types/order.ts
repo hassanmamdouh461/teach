@@ -22,6 +22,9 @@ export interface Order {
   totalAmount: number;
   createdAt: string; // ISO string
   paidAt?: string; // ISO string when payment was completed
+  customerPhone?: string;
+  pointsEarned?: number;
+  pointsRedeemed?: number;
 }
 
 // ─── Demo layout: 3 New · 2 Preparing · 3 Ready · 0 Completed · 0 Cancelled ──

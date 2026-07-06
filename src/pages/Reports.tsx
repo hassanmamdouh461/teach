@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
   TrendingUp, DollarSign, ShoppingBag,
   Coffee, Calendar, Download,
   CheckCircle2, Clock, XCircle, AlertCircle, Utensils,
+  UserCheck, Award, Coins
 } from 'lucide-react';
 import { useAnalytics, AnalyticsPeriod } from '../hooks/useAnalytics';
 import { StatCard } from '../components/ui/StatCard';
@@ -11,6 +12,8 @@ import { LoadingScreen } from '../components/ui/LoadingScreen';
 import { OrderStatus } from '../types/order';
 import { useLanguage } from '../context/LanguageContext';
 import { getTaxRate } from '../utils/settingsConfig';
+import { customersService } from '../services/customersService';
+import { Customer } from '../types/customer';
 
 // ─── Status display config (UI-only: icons & colours) ────────────────────────
 const STATUS_CONFIG: Array<{
@@ -38,6 +41,19 @@ function periodLabel(p: AnalyticsPeriod, t: (k: string) => string) {
 export default function Reports() {
   const { t, isRtl, language } = useLanguage();
   const [dateRange, setDateRange] = useState<AnalyticsPeriod>('This Week');
+
+  const [customers, setCustomers] = useState<Customer[]>([]);
+
+  useEffect(() => {
+    customersService.getAll().then(setCustomers).catch(console.error);
+  }, []);
+
+  const customerStats = useMemo(() => {
+    const totalCount = customers.length;
+    const totalPoints = customers.reduce((sum, c) => sum + c.points, 0);
+    const totalValue = totalPoints; // 1 point = 1 EGP
+    return { totalCount, totalPoints, totalValue };
+  }, [customers]);
 
   // Single hook call — all computation happens inside useAnalytics.
   // When dateRange = 'Today', every stat equals Dashboard's values exactly.
@@ -497,6 +513,34 @@ export default function Reports() {
               })}
             </div>
           )}
+        </div>
+      </div>
+
+      {/* ── Loyalty & Customers Overview ── */}
+      <div className="bg-white p-3 md:p-6 rounded-xl md:rounded-2xl shadow-sm border border-gray-100/50 space-y-3 md:space-y-4 mt-6 md:mt-8">
+        <h2 className="text-sm md:text-lg font-bold text-gray-900 leading-none">{t('Loyalty & Customers')}</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-6">
+          <StatCard
+            label={t('Total Registered')}
+            value={customerStats.totalCount.toLocaleString()}
+            icon={UserCheck}
+            trend={t('Loyalty members')}
+            color="blue"
+          />
+          <StatCard
+            label={t('Total Points Distributed')}
+            value={customerStats.totalPoints.toLocaleString()}
+            icon={Award}
+            trend={t('Loyalty points')}
+            color="orange"
+          />
+          <StatCard
+            label={t('Points Value')}
+            value={`${customerStats.totalValue.toFixed(2)} ${language === 'ar' ? 'ج.م' : 'EGP'}`}
+            icon={Coins}
+            trend={t('Redemption value')}
+            color="green"
+          />
         </div>
       </div>
 

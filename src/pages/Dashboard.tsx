@@ -35,13 +35,6 @@ export default function Dashboard() {
       color: 'green',
     },
     {
-      label: t('Active Orders'),
-      value: analytics.openOrders.toString(),
-      icon: Coffee,
-      trend: analytics.openOrders > 0 ? t('Active now') : t('All clear'),
-      color: 'orange',
-    },
-    {
       label: t('Menu Items'),
       value: analytics.menuItemsCount.toString(),
       icon: Utensils,
@@ -117,8 +110,8 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Stats Grid - 2 cols on mobile, 4 on desktop */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-6">
+      {/* Stats Grid - 2 cols on mobile, 3 on desktop */}
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 md:gap-6">
         {stats.map((stat, index) => (
           <StatCard key={index} {...stat} />
         ))}

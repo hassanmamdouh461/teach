@@ -41,6 +41,25 @@ function initDatabase() {
       paidAt TEXT
     )
   `).run();
+  
+  // Create customers table
+  db.prepare(`
+    CREATE TABLE IF NOT EXISTS customers (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      phone TEXT UNIQUE NOT NULL,
+      points REAL NOT NULL DEFAULT 0,
+      createdAt TEXT NOT NULL
+    )
+  `).run();
+
+  // Create settings table for persistence of localStorage settings
+  db.prepare(`
+    CREATE TABLE IF NOT EXISTS settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    )
+  `).run();
 
   // Migration: Add paidAt column if table already existed without it
   try {
@@ -48,6 +67,17 @@ function initDatabase() {
   } catch (e) {
     // Column already exists or table didn't exist yet
   }
+
+  // Migration: Add customer columns to orders
+  try {
+    db.prepare('ALTER TABLE orders ADD COLUMN customerPhone TEXT').run();
+  } catch (e) {}
+  try {
+    db.prepare('ALTER TABLE orders ADD COLUMN pointsEarned REAL DEFAULT 0').run();
+  } catch (e) {}
+  try {
+    db.prepare('ALTER TABLE orders ADD COLUMN pointsRedeemed REAL DEFAULT 0').run();
+  } catch (e) {}
 
   // Migration: Update existing mock/legacy orders to Dine-in/Takeaway and reset them as new orders today
   try {
@@ -233,7 +263,10 @@ function getOrders() {
       paymentMethod: row.paymentMethod || undefined,
       totalAmount: row.totalAmount,
       createdAt: row.createdAt,
-      paidAt: row.paidAt || undefined
+      paidAt: row.paidAt || undefined,
+      customerPhone: row.customerPhone || undefined,
+      pointsEarned: row.pointsEarned || 0,
+      pointsRedeemed: row.pointsRedeemed || 0
     };
   });
 }
@@ -257,8 +290,8 @@ function createOrder(order) {
   const orderNumber = String(countToday + 1);
 
   sqlite.prepare(`
-    INSERT INTO orders (id, orderNumber, tableId, items, status, paymentStatus, paymentMethod, totalAmount, createdAt, paidAt)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO orders (id, orderNumber, tableId, items, status, paymentStatus, paymentMethod, totalAmount, createdAt, paidAt, customerPhone, pointsEarned, pointsRedeemed)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     id,
     orderNumber,
@@ -269,14 +302,20 @@ function createOrder(order) {
     order.paymentMethod || null,
     order.totalAmount,
     createdAt,
-    order.paidAt || null
+    order.paidAt || null,
+    order.customerPhone || null,
+    order.pointsEarned || 0,
+    order.pointsRedeemed || 0
   );
 
   return {
     ...order,
     id,
     orderNumber,
-    createdAt
+    createdAt,
+    customerPhone: order.customerPhone || undefined,
+    pointsEarned: order.pointsEarned || 0,
+    pointsRedeemed: order.pointsRedeemed || 0
   };
 }
 
@@ -307,6 +346,9 @@ function updateOrder(id, data) {
   if (data.totalAmount !== undefined) { fields.push('totalAmount = ?'); values.push(data.totalAmount); }
   if (data.createdAt !== undefined) { fields.push('createdAt = ?'); values.push(data.createdAt); }
   if (data.paidAt !== undefined) { fields.push('paidAt = ?'); values.push(data.paidAt); }
+  if (data.customerPhone !== undefined) { fields.push('customerPhone = ?'); values.push(data.customerPhone); }
+  if (data.pointsEarned !== undefined) { fields.push('pointsEarned = ?'); values.push(data.pointsEarned); }
+  if (data.pointsRedeemed !== undefined) { fields.push('pointsRedeemed = ?'); values.push(data.pointsRedeemed); }
   
   if (fields.length === 0) return getOrder(id);
   
@@ -336,7 +378,10 @@ function getOrder(id) {
     paymentMethod: row.paymentMethod || undefined,
     totalAmount: row.totalAmount,
     createdAt: row.createdAt,
-    paidAt: row.paidAt || undefined
+    paidAt: row.paidAt || undefined,
+    customerPhone: row.customerPhone || undefined,
+    pointsEarned: row.pointsEarned || 0,
+    pointsRedeemed: row.pointsRedeemed || 0
   };
 }
 
@@ -351,8 +396,8 @@ function resetOrders(defaults) {
   const runTransaction = sqlite.transaction((orders) => {
     sqlite.prepare('DELETE FROM orders').run();
     const insert = sqlite.prepare(`
-      INSERT INTO orders (id, orderNumber, tableId, items, status, paymentStatus, paymentMethod, totalAmount, createdAt, paidAt)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO orders (id, orderNumber, tableId, items, status, paymentStatus, paymentMethod, totalAmount, createdAt, paidAt, customerPhone, pointsEarned, pointsRedeemed)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     
     const created = [];
@@ -369,7 +414,10 @@ function resetOrders(defaults) {
         order.paymentMethod || null,
         order.totalAmount,
         createdAt,
-        order.paidAt || null
+        order.paidAt || null,
+        order.customerPhone || null,
+        order.pointsEarned || 0,
+        order.pointsRedeemed || 0
       );
       created.push({ ...order, id, createdAt });
     }
@@ -377,6 +425,78 @@ function resetOrders(defaults) {
   });
 
   return runTransaction(defaults);
+}
+
+// --- Customers CRUD Operations ---
+
+function getCustomers() {
+  const sqlite = getDb();
+  return sqlite.prepare('SELECT * FROM customers ORDER BY createdAt DESC').all();
+}
+
+function getCustomerByPhone(phone) {
+  const sqlite = getDb();
+  return sqlite.prepare('SELECT * FROM customers WHERE phone = ?').get(phone) || null;
+}
+
+function saveCustomer(customer) {
+  const sqlite = getDb();
+  const existing = sqlite.prepare('SELECT * FROM customers WHERE phone = ?').get(customer.phone);
+  
+  if (existing) {
+    sqlite.prepare('UPDATE customers SET name = ?, points = ? WHERE phone = ?').run(
+      customer.name || existing.name,
+      customer.points !== undefined ? customer.points : existing.points,
+      customer.phone
+    );
+    return getCustomerByPhone(customer.phone);
+  } else {
+    const id = customer.id || `cust-${Math.random().toString(36).substr(2, 9)}`;
+    const createdAt = customer.createdAt || new Date().toISOString();
+    sqlite.prepare('INSERT INTO customers (id, name, phone, points, createdAt) VALUES (?, ?, ?, ?, ?)')
+      .run(id, customer.name || 'Customer', customer.phone, customer.points || 0, createdAt);
+    return getCustomerByPhone(customer.phone);
+  }
+}
+
+function deleteCustomer(id) {
+  const sqlite = getDb();
+  sqlite.prepare('DELETE FROM customers WHERE id = ?').run(id);
+}
+
+// --- Settings Persistence ---
+
+function getSettings() {
+  const sqlite = getDb();
+  try {
+    const rows = sqlite.prepare('SELECT key, value FROM settings').all();
+    const settings = {};
+    for (const row of rows) {
+      settings[row.key] = row.value;
+    }
+    return settings;
+  } catch (e) {
+    console.error('[database] Failed to get settings:', e);
+    return {};
+  }
+}
+
+function saveSetting(key, value) {
+  const sqlite = getDb();
+  try {
+    sqlite.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run(key, value);
+  } catch (e) {
+    console.error('[database] Failed to save setting:', e);
+  }
+}
+
+function deleteSetting(key) {
+  const sqlite = getDb();
+  try {
+    sqlite.prepare('DELETE FROM settings WHERE key = ?').run(key);
+  } catch (e) {
+    console.error('[database] Failed to delete setting:', e);
+  }
 }
 
 module.exports = {
@@ -392,5 +512,12 @@ module.exports = {
   completeOrderPayment,
   updateOrder,
   deleteOrder,
-  resetOrders
+  resetOrders,
+  getCustomers,
+  getCustomerByPhone,
+  saveCustomer,
+  deleteCustomer,
+  getSettings,
+  saveSetting,
+  deleteSetting
 };

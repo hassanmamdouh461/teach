@@ -32,7 +32,10 @@ export default function Orders({ type = 'all' }: OrdersProps) {
     items: any[],
     paymentStatus: 'Paid' | 'Unpaid',
     paymentMethod?: 'Cash' | 'Card',
-    paidAmount?: number
+    paidAmount?: number,
+    customerPhone?: string,
+    pointsEarned?: number,
+    pointsRedeemed?: number
   ) => {
     const totalAmount = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
     const newOrder = await addOrder({
@@ -45,6 +48,9 @@ export default function Orders({ type = 'all' }: OrdersProps) {
       totalAmount,
       createdAt: new Date().toISOString(),
       paidAt: paymentStatus === 'Paid' ? new Date().toISOString() : undefined,
+      customerPhone,
+      pointsEarned,
+      pointsRedeemed
     });
     if (newOrder) {
       printKitchenReceipt(newOrder, language);

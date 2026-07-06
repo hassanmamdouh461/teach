@@ -128,6 +128,31 @@ const translations: Record<string, Record<Language, string>> = {
   'From Time': { en: 'From Time', ar: 'من وقت' },
   'To Time': { en: 'To Time', ar: 'إلى وقت' },
 
+  // Customer Loyalty Page
+  'Customers': { en: 'Customers', ar: 'العملاء' },
+  'Manage loyalty points and profiles': { en: 'Manage loyalty points and profiles', ar: 'إدارة نقاط ولاء العملاء وحساباتهم' },
+  'Search by phone or name...': { en: 'Search by phone or name...', ar: 'البحث بالاسم أو الهاتف...' },
+  'Add Customer': { en: 'Add Customer', ar: 'إضافة عميل' },
+  'Register New Customer': { en: 'Register New Customer', ar: 'تسجيل عميل جديد' },
+  'Customer Name': { en: 'Customer Name', ar: 'اسم العميل' },
+  'Phone Number': { en: 'Phone Number', ar: 'رقم الهاتف' },
+  'Loyalty Points': { en: 'Loyalty Points', ar: 'نقاط الولاء' },
+  'Registration Date': { en: 'Registration Date', ar: 'تاريخ التسجيل' },
+  'Enter customer phone': { en: 'Enter customer phone', ar: 'أدخل رقم هاتف العميل' },
+  'Points Balance': { en: 'Points Balance', ar: 'رصيد النقاط' },
+  'Skip': { en: 'Skip', ar: 'تخطي' },
+  'Redeem Points': { en: 'Redeem Points', ar: 'استبدال النقاط' },
+  'Redeemed points value': { en: 'Redeemed points value', ar: 'قيمة النقاط المستبدلة' },
+  'Customer Details': { en: 'Customer Details', ar: 'تفاصيل العميل' },
+  'Adjust Points': { en: 'Adjust Points', ar: 'تعديل النقاط' },
+  'Points': { en: 'Points', ar: 'النقاط' },
+  'Points balance:': { en: 'Points balance:', ar: 'رصيد النقاط:' },
+  'Earned:': { en: 'Earned:', ar: 'مكتسبة:' },
+  'Redeemed:': { en: 'Redeemed:', ar: 'مستبدلة:' },
+  'Edit Points': { en: 'Edit Points', ar: 'تعديل النقاط' },
+  'Total Registered': { en: 'Total Registered', ar: 'إجمالي المسجلين' },
+  'Total Points Distributed': { en: 'Total Points Distributed', ar: 'إجمالي النقاط الموزعة' },
+
   // Alerts & Confirms
   'Cancel this order?': { en: 'Cancel this order?', ar: 'هل تريد إلغاء هذا الطلب؟' },
   'هل تريد إلغاء هذا الطلب؟ / Cancel this order?': { en: 'Cancel this order?', ar: 'هل تريد إلغاء هذا الطلب؟' },
@@ -326,6 +351,10 @@ const translations: Record<string, Record<Language, string>> = {
   'Get help with using the app': { en: 'Get help with using the app', ar: 'احصل على المساعدة في تشغيل واستخدام التطبيق' },
   'Support': { en: 'Support', ar: 'الدعم' },
   'Log Out': { en: 'Log Out', ar: 'تسجيل الخروج' },
+
+  // Loyalty points Security
+  'Security PIN': { en: 'Security PIN', ar: 'رمز الأمان (PIN)' },
+  'Incorrect security PIN': { en: 'Incorrect security PIN', ar: 'رمز الأمان غير صحيح' },
 
   // Missing reports keys
   'orders': { en: 'orders', ar: 'طلبات' },

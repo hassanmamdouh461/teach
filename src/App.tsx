@@ -14,6 +14,7 @@ import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
 import PublicMenu from './pages/PublicMenu';
+import Customers from './pages/Customers';
 import { PinProtection } from './components/auth/PinProtection';
 
 
@@ -41,6 +42,7 @@ function AppRoutes() {
           <Route path="/kitchen" element={<Orders type="kitchen" />} />
           <Route path="/drinks" element={<Orders type="drinks" />} />
           <Route path="/payment" element={<Payment />} />
+          <Route path="/customers" element={<Customers />} />
           
           <Route element={<PinProtection />}>
             <Route path="/reports" element={<Reports />} />

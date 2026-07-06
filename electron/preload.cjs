@@ -14,4 +14,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
   updateOrder: (id, data) => ipcRenderer.invoke('db:update-order', id, data),
   deleteOrder: (id) => ipcRenderer.invoke('db:delete-order', id),
   resetOrders: (defaults) => ipcRenderer.invoke('db:reset-orders', defaults),
+
+  getCustomers: () => ipcRenderer.invoke('db:get-customers'),
+  getCustomerByPhone: (phone) => ipcRenderer.invoke('db:get-customer-by-phone', phone),
+  saveCustomer: (customer) => ipcRenderer.invoke('db:save-customer', customer),
+  deleteCustomer: (id) => ipcRenderer.invoke('db:delete-customer', id),
+
+  getSettings: () => ipcRenderer.invoke('db:get-settings'),
+  saveSetting: (key, value) => ipcRenderer.invoke('db:save-setting', key, value),
+  deleteSetting: (key) => ipcRenderer.invoke('db:delete-setting', key),
 });

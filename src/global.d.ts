@@ -27,6 +27,18 @@ export interface Order {
   paymentMethod?: 'Cash' | 'Card';
   totalAmount: number;
   createdAt: string;
+  paidAt?: string;
+  customerPhone?: string;
+  pointsEarned?: number;
+  pointsRedeemed?: number;
+}
+
+export interface Customer {
+  id: string;
+  name: string;
+  phone: string;
+  points: number;
+  createdAt: string;
 }
 
 declare global {
@@ -45,6 +57,15 @@ declare global {
       updateOrder: (id: string, data: Partial<Omit<Order, 'id'>>) => Promise<Order>;
       deleteOrder: (id: string) => Promise<void>;
       resetOrders: (defaults: Omit<Order, 'id'>[]) => Promise<Order[]>;
+
+      getCustomers: () => Promise<Customer[]>;
+      getCustomerByPhone: (phone: string) => Promise<Customer | null>;
+      saveCustomer: (customer: Partial<Customer> & { phone: string }) => Promise<Customer>;
+      deleteCustomer: (id: string) => Promise<void>;
+
+      getSettings: () => Promise<Record<string, string>>;
+      saveSetting: (key: string, value: string) => Promise<void>;
+      deleteSetting: (key: string) => Promise<void>;
     };
   }
 }
