@@ -428,7 +428,7 @@ export default function Customers() {
 
       {/* ─── PIN Verification Prompt Modal ─── */}
       <AnimatePresence>
-        {isPinPromptOpen && pendingEditCustomer && (
+        {isPinPromptOpen && (pendingEditCustomer || pendingDeleteCustomer) && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
@@ -440,6 +440,7 @@ export default function Customers() {
                 onClick={() => {
                   setIsPinPromptOpen(false);
                   setPendingEditCustomer(null);
+                  setPendingDeleteCustomer(null);
                 }}
                 className="absolute top-4 right-4 p-1 hover:bg-gray-100 text-gray-400 hover:text-gray-600 rounded-lg transition-colors"
               >
@@ -489,6 +490,7 @@ export default function Customers() {
                   onClick={() => {
                     setIsPinPromptOpen(false);
                     setPendingEditCustomer(null);
+                    setPendingDeleteCustomer(null);
                   }}
                   className="text-gray-405 hover:text-gray-600 font-bold active:scale-95 transition-all"
                 >
