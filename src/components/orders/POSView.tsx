@@ -346,8 +346,8 @@ export function POSView({ menuItems, onCreateOrder, estimatedOrderNumber }: POSV
       
       {/* 1. LEFT COLUMN: Payments & Calculator (Width 28%) - Only visible for Takeaway */}
       {orderMode === 'Takeaway' && (
-        <div className="w-full lg:w-[28%] bg-white p-2.5 md:p-3 rounded-2xl border border-gray-200/80 shadow-sm flex flex-col justify-between overflow-hidden">
-          <div className="space-y-1 md:space-y-1.5">
+        <div className="w-full lg:w-[28%] lg:h-full bg-white p-2.5 md:p-3 rounded-2xl border border-gray-200/80 shadow-sm flex flex-col justify-between overflow-hidden pos-calculator">
+          <div className="overflow-y-auto hide-scrollbar flex-1 pr-0.5 flex flex-col justify-between gap-2">
             <h2 className="font-extrabold text-xs md:text-sm text-mocha-800 border-b border-gray-100 pb-1.5 shrink-0">
               <span className="font-sans">{t('Payment & Invoice')}</span>
             </h2>
@@ -472,7 +472,7 @@ export function POSView({ menuItems, onCreateOrder, estimatedOrderNumber }: POSV
       )}
 
       {/* 2. CENTER COLUMN: Product Grid & Category Filters (Width 2/4) */}
-      <div className="flex-1 bg-white p-4 rounded-2xl border border-gray-200/80 shadow-sm flex flex-col overflow-hidden">
+      <div className="flex-1 lg:h-full bg-white p-4 rounded-2xl border border-gray-200/80 shadow-sm flex flex-col overflow-hidden">
         {/* Category Selector */}
         <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-3 border-b border-gray-100 shrink-0">
           {categories.map(cat => (
@@ -526,7 +526,7 @@ export function POSView({ menuItems, onCreateOrder, estimatedOrderNumber }: POSV
       </div>
 
       {/* 3. RIGHT COLUMN: Current Bill & Summary (Width 23%) */}
-      <div className="w-full lg:w-[23%] bg-white p-3 md:p-3.5 rounded-2xl border border-gray-200/80 shadow-sm flex flex-col justify-between overflow-hidden">
+      <div className="w-full lg:w-[23%] lg:h-full bg-white p-3 md:p-3.5 rounded-2xl border border-gray-200/80 shadow-sm flex flex-col justify-between overflow-hidden">
         <div className="flex-1 flex flex-col overflow-hidden">
           <h2 className="font-extrabold text-base md:text-lg text-mocha-800 border-b border-gray-100 pb-2 shrink-0">{t('Invoice Details')}</h2>
           

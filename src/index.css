@@ -138,3 +138,59 @@
     touch-action: manipulation;
   }
 }
+
+/* Height-based responsive scaling for POS screen */
+@media (max-height: 850px) {
+  /* Reduce padding of calculator panel */
+  .pos-calculator {
+    padding: 0.5rem !important;
+  }
+  
+  /* Reduce gaps inside calculator */
+  .pos-calculator .space-y-1 > * + * {
+    margin-top: 0.25rem !important;
+  }
+  
+  .pos-calculator .grid {
+    gap: 0.25rem !important;
+  }
+  
+  /* Reduce height of display boxes */
+  .pos-calculator [class*="h-[40px]"] {
+    height: 32px !important;
+    font-size: 1rem !important;
+    padding-top: 0.125rem !important;
+    padding-bottom: 0.125rem !important;
+  }
+  
+  /* Reduce quick cash button heights */
+  .pos-calculator [onClick*="handleQuickCash"] {
+    padding-top: 0.35rem !important;
+    padding-bottom: 0.35rem !important;
+    font-size: 0.875rem !important;
+  }
+  
+  /* Reduce keypad button heights */
+  .pos-calculator [onClick*="handleKeypadPress"] {
+    padding-top: 0.4rem !important;
+    padding-bottom: 0.4rem !important;
+    font-size: 1rem !important;
+  }
+  
+  /* Reduce payment method selection padding */
+  .pos-calculator [onClick*="setPaymentMethod"] {
+    padding-top: 0.35rem !important;
+    padding-bottom: 0.35rem !important;
+    font-size: 0.75rem !important;
+  }
+  
+  /* Reduce action buttons padding */
+  .pos-calculator [onClick*="handlePrintAndPay"],
+  .pos-calculator [onClick*="handleReset"],
+  .pos-calculator [onClick*="handleSaveOrder"] {
+    padding-top: 0.4rem !important;
+    padding-bottom: 0.4rem !important;
+    font-size: 0.75rem !important;
+  }
+}
+
