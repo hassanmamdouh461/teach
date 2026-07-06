@@ -123,6 +123,7 @@ export default function Settings() {
             </div>
             <div className="space-y-1.5">
               <h3 className="font-bold text-gray-900 text-sm md:text-base">م. حسن ممدوح</h3>
+              <p className="text-xs md:text-sm font-semibold text-mocha-600">فريق إنجاز</p>
               <p className="text-xs md:text-sm text-gray-600 font-sans" dir="ltr">📞 01125377606</p>
               <p className="text-xs md:text-sm text-gray-600 font-sans" dir="ltr">✉️ hassanmamdouh461@gmail.com</p>
             </div>
