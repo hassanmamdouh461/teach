@@ -44,6 +44,7 @@ export default function Customers() {
   // PIN Verification State
   const [isPinPromptOpen, setIsPinPromptOpen] = useState(false);
   const [pendingEditCustomer, setPendingEditCustomer] = useState<Customer | null>(null);
+  const [pendingDeleteCustomer, setPendingDeleteCustomer] = useState<Customer | null>(null);
   const [enteredVerificationPin, setEnteredVerificationPin] = useState('');
   const [verificationPinError, setVerificationPinError] = useState(false);
 
@@ -133,6 +134,10 @@ export default function Customers() {
             setSelectedCustomer(pendingEditCustomer);
             setEditPoints(pendingEditCustomer.points);
             setIsEditModalOpen(true);
+            setPendingEditCustomer(null);
+          } else if (pendingDeleteCustomer) {
+            executeDeleteCustomer(pendingDeleteCustomer);
+            setPendingDeleteCustomer(null);
           }
         } else {
           setVerificationPinError(true);
@@ -166,15 +171,28 @@ export default function Customers() {
     }
   };
 
-  const handleDeleteCustomer = async (id: string) => {
+  const executeDeleteCustomer = async (customer: Customer) => {
     if (!confirm(t('Are you sure you want to delete this customer profile?'))) return;
 
     try {
-      await customersService.delete(id);
+      await customersService.delete(customer.id);
       loadCustomers();
     } catch (err) {
       console.error(err);
       alert(t('Failed to delete customer'));
+    }
+  };
+
+  const handleDeleteCustomer = (customer: Customer) => {
+    const savedPin = localStorage.getItem('brewmaster_admin_pin');
+    if (savedPin) {
+      setPendingDeleteCustomer(customer);
+      setPendingEditCustomer(null);
+      setEnteredVerificationPin('');
+      setVerificationPinError(false);
+      setIsPinPromptOpen(true);
+    } else {
+      executeDeleteCustomer(customer);
     }
   };
 
@@ -260,7 +278,7 @@ export default function Customers() {
                           <Edit2 size={14} />
                         </button>
                         <button
-                          onClick={() => handleDeleteCustomer(c.id)}
+                          onClick={() => handleDeleteCustomer(c)}
                           className="p-1.5 hover:bg-red-50 text-red-500 rounded-lg transition-colors"
                           title={t('Delete')}
                         >
