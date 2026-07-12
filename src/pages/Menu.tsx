@@ -20,7 +20,18 @@ export default function Menu() {
 
   const filteredItems = items.filter(item => {
     const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory;
-    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const nameTranslated = t(item.name).toLowerCase();
+    const descTranslated = t(item.description || '').toLowerCase();
+    const nameOriginal = item.name.toLowerCase();
+    const descOriginal = (item.description || '').toLowerCase();
+    const query = searchQuery.toLowerCase().trim();
+    
+    const matchesSearch = nameOriginal.includes(query) || 
+                          descOriginal.includes(query) ||
+                          nameTranslated.includes(query) ||
+                          descTranslated.includes(query);
+                          
     return matchesCategory && matchesSearch;
   });
 

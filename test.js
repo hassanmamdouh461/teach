@@ -1,1 +1,0 @@
-﻿const db=require('better-sqlite3')('C:/Users/dell/AppData/Roaming/restaurant-management-system/brewmaster.db'); console.log(JSON.stringify(db.prepare('SELECT paymentStatus, paidAt, totalAmount, status FROM orders').all()));

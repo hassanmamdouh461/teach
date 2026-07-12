@@ -7,6 +7,7 @@ import { PinSetupModal } from '../components/settings/PinSetupModal';
 import { ProfileSettingsModal } from '../components/settings/ProfileSettingsModal';
 import { StoreConfigModal } from '../components/settings/StoreConfigModal';
 import { useLanguage } from '../context/LanguageContext';
+import { DatabaseStatus } from '../components/ui/DatabaseStatus';
 
 export default function Settings() {
   const { t } = useLanguage();
@@ -106,6 +107,15 @@ export default function Settings() {
             </div>
           </motion.div>
         </div>
+
+        {/* Database Connection Status */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.28 }}
+        >
+          <DatabaseStatus />
+        </motion.div>
 
         {/* Support Section */}
         <motion.div 

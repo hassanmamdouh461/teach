@@ -8,9 +8,10 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
-    show: false, // Prevents white flash on launch
+    show: false, // Prevent white flash on startup
     backgroundColor: '#111827', // Match the application dark background
     autoHideMenuBar: true,
+    icon: path.join(__dirname, 'icon.ico'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
       nodeIntegration: false,
@@ -26,7 +27,7 @@ function createWindow() {
     mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
   }
 
-  // Show window only when content is ready to paint
+  // Show window only when content is ready to paint to prevent white flash
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
   });

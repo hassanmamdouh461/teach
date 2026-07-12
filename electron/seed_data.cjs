@@ -1,17 +1,4 @@
-export interface MenuItem {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  category: string;
-  image: string;
-  available: boolean;
-}
-
-export const CATEGORIES = ['All', 'Kitchen', 'Bar'];
-
-// Coffee Shop Menu Data - 40 Items
-export const INITIAL_MENU_ITEMS: MenuItem[] = [
+module.exports = [
   // ☕ Hot Drinks (Bar)
   {
     id: '1',
@@ -20,7 +7,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     price: 35.00,
     category: 'Bar',
     image: 'https://images.unsplash.com/photo-1510972527921-ce03766a1cf1?w=400&auto=format&fit=crop&q=60',
-    available: true,
+    available: 1,
   },
   {
     id: '2',
@@ -29,7 +16,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     price: 45.00,
     category: 'Bar',
     image: 'https://images.unsplash.com/photo-1510972527921-ce03766a1cf1?w=400&auto=format&fit=crop&q=60',
-    available: true,
+    available: 1,
   },
   {
     id: '3',
@@ -38,7 +25,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     price: 50.00,
     category: 'Bar',
     image: 'https://images.unsplash.com/photo-1534778101976-62847782c213?w=400&auto=format&fit=crop&q=60',
-    available: true,
+    available: 1,
   },
   {
     id: '4',
@@ -47,7 +34,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     price: 55.00,
     category: 'Bar',
     image: 'https://images.unsplash.com/photo-1577968897966-3d4325b36b61?w=400&auto=format&fit=crop&q=60',
-    available: true,
+    available: 1,
   },
   {
     id: '5',
@@ -56,7 +43,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     price: 60.00,
     category: 'Bar',
     image: 'https://images.unsplash.com/photo-1570968915860-54d5c301fc9f?w=400&auto=format&fit=crop&q=60',
-    available: true,
+    available: 1,
   },
   {
     id: '6',
@@ -65,7 +52,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     price: 65.00,
     category: 'Bar',
     image: 'https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=400&auto=format&fit=crop&q=60',
-    available: true,
+    available: 1,
   },
   {
     id: '7',
@@ -74,7 +61,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     price: 70.00,
     category: 'Bar',
     image: 'https://images.unsplash.com/photo-1541167760496-1628856ab772?w=400&auto=format&fit=crop&q=60',
-    available: true,
+    available: 1,
   },
   {
     id: '8',
@@ -83,7 +70,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     price: 45.00,
     category: 'Bar',
     image: 'https://images.unsplash.com/photo-1551030173-1d28398e2107?w=400&auto=format&fit=crop&q=60',
-    available: true,
+    available: 1,
   },
   {
     id: '9',
@@ -92,7 +79,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     price: 75.00,
     category: 'Bar',
     image: 'https://images.unsplash.com/photo-1534778101976-62847782c213?w=400&auto=format&fit=crop&q=60',
-    available: true,
+    available: 1,
   },
   {
     id: '10',
@@ -101,7 +88,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     price: 35.00,
     category: 'Bar',
     image: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=400&auto=format&fit=crop&q=60',
-    available: true,
+    available: 1,
   },
   {
     id: '11',
@@ -110,7 +97,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     price: 45.00,
     category: 'Bar',
     image: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=400&auto=format&fit=crop&q=60',
-    available: true,
+    available: 1,
   },
 
   // 🧊 Cold Drinks (Bar)
@@ -121,7 +108,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     price: 50.00,
     category: 'Bar',
     image: 'https://images.unsplash.com/photo-1517701604599-bb29b565090c?w=400&auto=format&fit=crop&q=60',
-    available: true,
+    available: 1,
   },
   {
     id: '13',
@@ -130,7 +117,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     price: 65.00,
     category: 'Bar',
     image: 'https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?w=400&auto=format&fit=crop&q=60',
-    available: true,
+    available: 1,
   },
   {
     id: '14',
@@ -139,7 +126,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     price: 80.00,
     category: 'Bar',
     image: 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=400&auto=format&fit=crop&q=60',
-    available: true,
+    available: 1,
   },
   {
     id: '15',
@@ -148,7 +135,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     price: 75.00,
     category: 'Bar',
     image: 'https://images.unsplash.com/photo-1662047102608-a6f2e492411f?w=400&auto=format&fit=crop&q=60',
-    available: true,
+    available: 1,
   },
   {
     id: '16',
@@ -157,7 +144,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     price: 80.00,
     category: 'Bar',
     image: 'https://images.unsplash.com/photo-1578314675249-a6910f80cc4e?w=400&auto=format&fit=crop&q=60',
-    available: true,
+    available: 1,
   },
   {
     id: '17',
@@ -166,7 +153,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     price: 70.00,
     category: 'Bar',
     image: 'https://images.unsplash.com/photo-1517701604599-bb29b565090c?w=400&auto=format&fit=crop&q=60',
-    available: true,
+    available: 1,
   },
   {
     id: '18',
@@ -175,7 +162,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     price: 85.00,
     category: 'Bar',
     image: 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=400&auto=format&fit=crop&q=60',
-    available: true,
+    available: 1,
   },
 
   // 🥤 Frappes (Bar)
@@ -186,7 +173,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     price: 85.00,
     category: 'Bar',
     image: 'https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=400&auto=format&fit=crop&q=60',
-    available: true,
+    available: 1,
   },
   {
     id: '20',
@@ -195,7 +182,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     price: 85.00,
     category: 'Bar',
     image: 'https://images.unsplash.com/photo-1596085189728-6a987d60e7f7?w=400&auto=format&fit=crop&q=60',
-    available: true,
+    available: 1,
   },
   {
     id: '21',
@@ -204,7 +191,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     price: 80.00,
     category: 'Bar',
     image: 'https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=400&auto=format&fit=crop&q=60',
-    available: true,
+    available: 1,
   },
   {
     id: '22',
@@ -213,7 +200,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     price: 90.00,
     category: 'Bar',
     image: 'https://images.unsplash.com/photo-1579954115545-a95591f28bfc?w=400&auto=format&fit=crop&q=60',
-    available: true,
+    available: 1,
   },
 
   // 🍨 Milkshakes (Bar)
@@ -224,7 +211,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     price: 75.00,
     category: 'Bar',
     image: 'https://images.unsplash.com/photo-1653852883277-c4b4b9e020e5?w=400&auto=format&fit=crop&q=60',
-    available: true,
+    available: 1,
   },
   {
     id: '24',
@@ -233,7 +220,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     price: 70.00,
     category: 'Bar',
     image: 'https://images.unsplash.com/photo-1686638745403-d21193f16b2f?w=400&auto=format&fit=crop&q=60',
-    available: true,
+    available: 1,
   },
   {
     id: '25',
@@ -242,7 +229,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     price: 70.00,
     category: 'Bar',
     image: 'https://images.unsplash.com/photo-1579954115563-e72bf1381629?w=400&auto=format&fit=crop&q=60',
-    available: true,
+    available: 1,
   },
   {
     id: '26',
@@ -251,7 +238,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     price: 65.00,
     category: 'Bar',
     image: 'https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=400&auto=format&fit=crop&q=60',
-    available: true,
+    available: 1,
   },
   {
     id: '27',
@@ -260,7 +247,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     price: 75.00,
     category: 'Bar',
     image: 'https://images.unsplash.com/photo-1579954115545-a95591f28bfc?w=400&auto=format&fit=crop&q=60',
-    available: true,
+    available: 1,
   },
 
   // 🍹 Teas & Cold Brew Mocktails (Bar)
@@ -271,7 +258,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     price: 35.00,
     category: 'Bar',
     image: 'https://images.unsplash.com/photo-1627435601361-ec25f5b1d0e5?w=400&auto=format&fit=crop&q=60',
-    available: true,
+    available: 1,
   },
   {
     id: '29',
@@ -280,7 +267,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     price: 40.00,
     category: 'Bar',
     image: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=400&auto=format&fit=crop&q=60',
-    available: true,
+    available: 1,
   },
   {
     id: '30',
@@ -289,7 +276,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     price: 55.00,
     category: 'Bar',
     image: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=400&auto=format&fit=crop&q=60',
-    available: true,
+    available: 1,
   },
   {
     id: '31',
@@ -298,7 +285,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     price: 50.00,
     category: 'Bar',
     image: 'https://images.unsplash.com/photo-1497534446932-c925b458314e?w=400&auto=format&fit=crop&q=60',
-    available: true,
+    available: 1,
   },
   {
     id: '32',
@@ -307,7 +294,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     price: 65.00,
     category: 'Bar',
     image: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=400&auto=format&fit=crop&q=60',
-    available: true,
+    available: 1,
   },
 
   // 🍔 Sandwiches & Meals (Kitchen)
@@ -318,7 +305,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     price: 120.00,
     category: 'Kitchen',
     image: 'https://images.unsplash.com/photo-1567234669003-dce7a7a88821?w=400&auto=format&fit=crop&q=60',
-    available: true,
+    available: 1,
   },
   {
     id: '34',
@@ -327,7 +314,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     price: 150.00,
     category: 'Kitchen',
     image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&auto=format&fit=crop&q=60',
-    available: true,
+    available: 1,
   },
   {
     id: '35',
@@ -336,7 +323,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     price: 99.00,
     category: 'Kitchen',
     image: 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=400&auto=format&fit=crop&q=60',
-    available: true,
+    available: 1,
   },
   {
     id: '36',
@@ -345,7 +332,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     price: 65.00,
     category: 'Kitchen',
     image: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=400&auto=format&fit=crop&q=60',
-    available: true,
+    available: 1,
   },
   {
     id: '37',
@@ -354,7 +341,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     price: 55.00,
     category: 'Kitchen',
     image: 'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400&auto=format&fit=crop&q=60',
-    available: true,
+    available: 1,
   },
 
   // 🍟 Sides & Desserts (Kitchen)
@@ -365,7 +352,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     price: 65.00,
     category: 'Kitchen',
     image: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400&auto=format&fit=crop&q=60',
-    available: true,
+    available: 1,
   },
   {
     id: '39',
@@ -374,7 +361,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     price: 70.00,
     category: 'Kitchen',
     image: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400&auto=format&fit=crop&q=60',
-    available: true,
+    available: 1,
   },
   {
     id: '40',
@@ -383,7 +370,6 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     price: 60.00,
     category: 'Kitchen',
     image: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=400&auto=format&fit=crop&q=60',
-    available: true,
+    available: 1,
   },
 ];
-

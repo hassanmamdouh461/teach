@@ -26,6 +26,36 @@ function initDatabase() {
     )
   `).run();
 
+  // Auto-seed to 40 items if current database has fewer items
+  try {
+    const count = db.prepare('SELECT COUNT(*) as count FROM menu').get().count;
+    if (count < 40) {
+      console.log('[database] SQLite menu has fewer than 40 items. Seeding/Updating to 40 items...');
+      const seedData = require('./seed_data.cjs');
+      const insert = db.prepare(`
+        INSERT OR REPLACE INTO menu (id, name, description, price, category, image, available)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `);
+      db.transaction(() => {
+        db.prepare('DELETE FROM menu').run();
+        for (const item of seedData) {
+          insert.run(
+            item.id,
+            item.name,
+            item.description,
+            item.price,
+            item.category,
+            item.image,
+            item.available ? 1 : 0
+          );
+        }
+      })();
+      console.log('[database] Auto-seeding complete! Total menu items:', db.prepare('SELECT COUNT(*) as count FROM menu').get().count);
+    }
+  } catch (err) {
+    console.error('[database] Auto-seeding SQLite database failed:', err);
+  }
+
   // Create orders table
   db.prepare(`
     CREATE TABLE IF NOT EXISTS orders (
@@ -276,17 +306,11 @@ function createOrder(order) {
   const id = order.id || `ord-${Math.random().toString(36).substr(2, 9)}`;
   const createdAt = order.createdAt || new Date().toISOString();
   
-  // Calculate sequential order number for today
+  // Calculate sequential order number for today using efficient SQL COUNT
   const todayLocal = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
-  const rows = sqlite.prepare('SELECT createdAt FROM orders').all();
-  const countToday = rows.filter(r => {
-    try {
-      const localDate = new Date(r.createdAt).toLocaleDateString('en-CA');
-      return localDate === todayLocal;
-    } catch (e) {
-      return false;
-    }
-  }).length;
+  const countToday = sqlite.prepare(
+    "SELECT COUNT(*) as count FROM orders WHERE date(createdAt) = ?"
+  ).get(todayLocal).count;
   const orderNumber = String(countToday + 1);
 
   sqlite.prepare(`

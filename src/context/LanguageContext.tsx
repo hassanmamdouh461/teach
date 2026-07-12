@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 type Language = 'en' | 'ar';
 
@@ -231,20 +231,84 @@ const translations: Record<string, Record<Language, string>> = {
   // Default Product Names & Descriptions
   'Espresso': { en: 'Espresso', ar: 'إسبريسو' },
   'Rich, concentrated shot of premium Italian arabica beans.': { en: 'Rich, concentrated shot of premium Italian arabica beans.', ar: 'جرعة غنية ومركزة من حبوب أرابيكا الإيطالية الفاخرة.' },
-  'Spanish Latte': { en: 'Spanish Latte', ar: 'سبانش لاتيه' },
-  'Espresso with condensed milk and steamed milk.': { en: 'Espresso with condensed milk and steamed milk.', ar: 'إسبريسو مع الحليب المكثف والحليب المبخر.' },
+  'Double Espresso': { en: 'Double Espresso', ar: 'إسبريسو دبل' },
+  'Double shot of our rich, concentrated espresso.': { en: 'Double shot of our rich, concentrated espresso.', ar: 'جرعة مزدوجة من إسبريسو غني ومركز.' },
+  'Cortado': { en: 'Cortado', ar: 'كورتادو' },
+  'Equal parts espresso and warm silky milk.': { en: 'Equal parts espresso and warm silky milk.', ar: 'كميات متساوية من الإسبريسو والحليب الدافئ الناعم.' },
+  'Flat White': { en: 'Flat White', ar: 'فلات وايت' },
+  'Bold espresso double shot with thin layer of microfoam.': { en: 'Bold espresso double shot with thin layer of microfoam.', ar: 'إسبريسو دبل قوي مع طبقة رقيقة من رغوة الحليب.' },
+  'Cafe Latte': { en: 'Cafe Latte', ar: 'لاتيه' },
+  'Espresso shot with steamed milk and a light layer of foam.': { en: 'Espresso shot with steamed milk and a light layer of foam.', ar: 'جرعة إسبريسو مع حليب مبخر وطبقة خفيفة من الرغوة.' },
   'Cappuccino': { en: 'Cappuccino', ar: 'كابوتشينو' },
   'Classic Italian coffee with steamed milk foam.': { en: 'Classic Italian coffee with steamed milk foam.', ar: 'قهوة إيطالية كلاسيكية مع رغوة الحليب المبخر.' },
+  'Spanish Latte': { en: 'Spanish Latte', ar: 'سبانش لاتيه' },
+  'Espresso with condensed milk and steamed milk.': { en: 'Espresso with condensed milk and steamed milk.', ar: 'إسبريسو مع الحليب المكثف والحليب المبخر.' },
+  'Americano': { en: 'Americano', ar: 'أمريكانو' },
+  'Espresso shots diluted with hot water for a smooth finish.': { en: 'Espresso shots diluted with hot water for a smooth finish.', ar: 'إسبريسو مخفف بالماء الساخن لمذاق ناعم.' },
+  'Cafe Mocha': { en: 'Cafe Mocha', ar: 'كافيه موكا' },
+  'Espresso blended with rich chocolate and steamed milk.': { en: 'Espresso blended with rich chocolate and steamed milk.', ar: 'إسبريسو ممزوج بالشوكولاتة الغنية والحليب المبخر.' },
+  'Turkish Coffee': { en: 'Turkish Coffee', ar: 'قهوة تركي' },
+  'Finely ground coffee brewed in a traditional pot.': { en: 'Finely ground coffee brewed in a traditional pot.', ar: 'قهوة مطحونة ناعمة ومحضرة في وعاء تقليدي.' },
+  'French Coffee': { en: 'French Coffee', ar: 'قهوة فرنساوي' },
+  'Traditional Turkish coffee brewed with milk.': { en: 'Traditional Turkish coffee brewed with milk.', ar: 'قهوة تركية تقليدية محضرة بالحليب.' },
+  'Iced Americano': { en: 'Iced Americano', ar: 'أمريكانو بارد' },
+  'Espresso shots over ice with chilled water.': { en: 'Espresso shots over ice with chilled water.', ar: 'جرعات إسبريسو مع الماء البارد والثلج.' },
   'Iced Latte': { en: 'Iced Latte', ar: 'لاتيه بارد' },
   'Chilled espresso with cold milk over ice.': { en: 'Chilled espresso with cold milk over ice.', ar: 'إسبريسو مثلج مع الحليب البارد.' },
+  'Iced Spanish Latte': { en: 'Iced Spanish Latte', ar: 'سبانش لاتيه بارد' },
+  'Chilled espresso with condensed milk and cold milk over ice.': { en: 'Chilled espresso with condensed milk and cold milk over ice.', ar: 'إسبريسو مثلج مع حليب مكثف وحليب بارد.' },
   'Iced Caramel Macchiato': { en: 'Iced Caramel Macchiato', ar: 'كيراميل ماكياتو بارد' },
   'Vanilla latte with caramel drizzle over ice.': { en: 'Vanilla latte with caramel drizzle over ice.', ar: 'لاتيه الفانيليا مع صوص الكراميل والثلج.' },
+  'Iced Mocha': { en: 'Iced Mocha', ar: 'موكا باردة' },
+  'Rich chocolate, espresso and cold milk served over ice.': { en: 'Rich chocolate, espresso and cold milk served over ice.', ar: 'شوكولاتة غنية، إسبريسو وحليب بارد يقدم مع الثلج.' },
+  'Cold Brew': { en: 'Cold Brew', ar: 'كولد برو' },
+  'Premium beans steeped in cold water for 18 hours.': { en: 'Premium beans steeped in cold water for 18 hours.', ar: 'بن فاخر منقوع في الماء البارد لمدة ١٨ ساعة.' },
+  'Iced Pistachio Latte': { en: 'Iced Pistachio Latte', ar: 'بيستاشيو لاتيه بارد' },
+  'Espresso with sweet pistachio sauce, milk and ice.': { en: 'Espresso with sweet pistachio sauce, milk and ice.', ar: 'إسبريسو مع صوص الفستق اللذيذ والحليب والثلج.' },
   'Mocha Frappe': { en: 'Mocha Frappe', ar: 'موخا فرابيه' },
   'Frozen mocha bliss topped with whipped cream.': { en: 'Frozen mocha bliss topped with whipped cream.', ar: 'مزيج الموكا المثلج اللذيذ مغطى بالكريمة المخفوقة.' },
+  'Caramel Frappe': { en: 'Caramel Frappe', ar: 'كراميل فرابيه' },
+  'Sweet blended ice coffee with rich caramel sauce.': { en: 'Sweet blended ice coffee with rich caramel sauce.', ar: 'قهوة مثلجة ممزوجة حلوة المذاق مع صوص الكراميل الغني.' },
+  'Coffee Frappe': { en: 'Coffee Frappe', ar: 'قهوة فرابيه' },
+  'Classic blended coffee beverage with ice and milk.': { en: 'Classic blended coffee beverage with ice and milk.', ar: 'مشروب قهوة مثلج كلاسيكي ممزوج بالثلج والحليب.' },
+  'Oreo Frappe': { en: 'Oreo Frappe', ar: 'أوريو فرابيه' },
+  'Blended Oreo cookies, coffee, milk and chocolate drizzle.': { en: 'Blended Oreo cookies, coffee, milk and chocolate drizzle.', ar: 'بسكويت أوريو ممزوج بالقهوة والحليب وصوص الشوكولاتة.' },
   'Oreo Milkshake': { en: 'Oreo Milkshake', ar: 'ميلك شيك أوريو' },
   'Cookies and cream frozen delight.': { en: 'Cookies and cream frozen delight.', ar: 'بهجة مثلجة بنكهة الكوكيز والكريمة.' },
   'Strawberry Milkshake': { en: 'Strawberry Milkshake', ar: 'ميلك شيك فراولة' },
   'Fresh strawberries blended with vanilla ice cream.': { en: 'Fresh strawberries blended with vanilla ice cream.', ar: 'فراولة طازجة مخفوقة مع آيس كريم الفانيليا الفاخر.' },
+  'Chocolate Milkshake': { en: 'Chocolate Milkshake', ar: 'ميلك شيك شوكولاتة' },
+  'Creamy milkshake with rich Swiss chocolate.': { en: 'Creamy milkshake with rich Swiss chocolate.', ar: 'ميلك شيك كريمي بالشوكولاتة السويسرية الغنية.' },
+  'Vanilla Milkshake': { en: 'Vanilla Milkshake', ar: 'ميلك شيك فانيليا' },
+  'Classic milkshake flavored with premium vanilla bean.': { en: 'Classic milkshake flavored with premium vanilla bean.', ar: 'ميلك شيك كلاسيكي بنكهة حبوب الفانيليا الفاخرة.' },
+  'Mango Milkshake': { en: 'Mango Milkshake', ar: 'ميلك شيك مانجو' },
+  'Tropical mango blended with creamy vanilla ice cream.': { en: 'Tropical mango blended with creamy vanilla ice cream.', ar: 'مانجو استوائية ممزوجة مع آيس كريم الفانيليا الكريمي.' },
+  'Green Tea': { en: 'Green Tea', ar: 'شاي أخضر' },
+  'Organic Japanese green tea brewed hot.': { en: 'Organic Japanese green tea brewed hot.', ar: 'شاي أخضر ياباني عضوي محضر ساخناً.' },
+  'Karak Tea': { en: 'Karak Tea', ar: 'شاي كرك' },
+  'Spiced black tea with evaporated milk and cardamom.': { en: 'Spiced black tea with evaporated milk and cardamom.', ar: 'شاي أسود متبل بالحليب المبخر والهيل.' },
+  'Mint Lemonade': { en: 'Mint Lemonade', ar: 'عصير ليمون نعناع' },
+  'Fresh lemon juice blended with ice and sweet mint.': { en: 'Fresh lemon juice blended with ice and sweet mint.', ar: 'عصير ليمون طازج ممزوج بالثلج والنعناع الحلو.' },
+  'Peach Iced Tea': { en: 'Peach Iced Tea', ar: 'آيس تي خوخ' },
+  'Chilled black tea infused with sweet peach syrup.': { en: 'Chilled black tea infused with sweet peach syrup.', ar: 'شاي أسود مثلج بنكهة شراب الخوخ الحلو.' },
+  'Passion Fruit Mojito': { en: 'Passion Fruit Mojito', ar: 'موهيتو باشن فروت' },
+  'Refreshing blend of lime, fresh mint, passion fruit and soda.': { en: 'Refreshing blend of lime, fresh mint, passion fruit and soda.', ar: 'مزيج منعش من الليمون والنعناع الطازج والباشن فروت والصودا.' },
+  'Classic Club Sandwich': { en: 'Classic Club Sandwich', ar: 'كلوب ساندوتش كلاسيك' },
+  'Toasted bread, chicken breast, lettuce, tomato and mayo.': { en: 'Toasted bread, chicken breast, lettuce, tomato and mayo.', ar: 'خبز محمص، صدر دجاج، خس، طماطم ومايونيز.' },
+  'Prime Beef Cheeseburger': { en: 'Prime Beef Cheeseburger', ar: 'تشيز برجر لحم فاخر' },
+  'Grilled beef patty, cheddar cheese, pickles and house sauce.': { en: 'Grilled beef patty, cheddar cheese, pickles and house sauce.', ar: 'قطعة لحم بقري مشوية، جبن شيدر، خيار مخلل وصوص خاص.' },
+  'Chicken Pane Sandwich': { en: 'Chicken Pane Sandwich', ar: 'فراخ بانيه' },
+  'Crispy fried chicken breast, lettuce, cheese and special sauce.': { en: 'Crispy fried chicken breast, lettuce, cheese and special sauce.', ar: 'صدر دجاج مقلي مقرمش، خس، جبنة وصوص خاص.' },
+  'Turkey & Cheese Croissant': { en: 'Turkey & Cheese Croissant', ar: 'كرواسون تركي وجبنة' },
+  'Flaky butter croissant filled with sliced turkey and swiss cheese.': { en: 'Flaky butter croissant filled with sliced turkey and swiss cheese.', ar: 'كرواسون زبدة هش محشو بشرائح الرومي وجبن سويسري.' },
+  'Grilled Cheese Sandwich': { en: 'Grilled Cheese Sandwich', ar: 'ساندوتش جبنة مشوية' },
+  'Melted cheddar and mozzarella in butter-toasted white bread.': { en: 'Melted cheddar and mozzarella in butter-toasted white bread.', ar: 'جبن شيدر وموزاريلا ذائبة في خبز أبيض محمص بالزبدة.' },
+  'Cheese Fries': { en: 'Cheese Fries', ar: 'بطاطس مقلية بالجبن' },
+  'Crispy golden fries topped with melted cheddar cheese sauce.': { en: 'Crispy golden fries topped with melted cheddar cheese sauce.', ar: 'بطاطس مقلية ذهبية مقرمشة مغطاة بصوص جبن الشيدر الذائب.' },
+  'Chocolate Fudge Cake': { en: 'Chocolate Fudge Cake', ar: 'كيكة الشوكولاتة الداكنة' },
+  'Decadent, rich chocolate cake slice layered with fudge.': { en: 'Decadent, rich chocolate cake slice layered with fudge.', ar: 'شريحة كيك شوكولاتة غنية ومترفة بطبقات الفدج.' },
+  'Warm Chocolate Brownie': { en: 'Warm Chocolate Brownie', ar: 'براوني شوكولاتة دافئة' },
+  'Warm fudge brownie served with a scoop of vanilla ice cream.': { en: 'Warm fudge brownie served with a scoop of vanilla ice cream.', ar: 'براوني فدج دافئة تقدم مع مغرفة من آيس كريم الفانيليا.' },
 
   // Payments Page
   'order #': { en: 'order #', ar: 'طلب رقم ' },
@@ -385,13 +449,13 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  const t = (key: string): string => {
+  const t = useCallback((key: string): string => {
     const translation = translations[key];
     if (translation) {
       return translation[language];
     }
     return key;
-  };
+  }, [language]);
 
   const isRtl = language === 'ar';
 

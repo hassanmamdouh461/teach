@@ -15,6 +15,7 @@ interface MenuState {
   deleteItem: (id: string) => Promise<void>;
   toggleAvailability: (id: string) => Promise<void>;
   refetch: () => Promise<void>;
+  resetMenu: () => Promise<void>;
 }
 
 interface OrdersState {
@@ -62,6 +63,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       setMenuLoading(true);
       setMenuError(null);
       const data = await menuService.getAll();
+      // database.cjs handles auto-seeding if items < 40, so we just use what's there
       setMenuItems(data);
     } catch (err) {
       console.warn('[DataContext] Failed to fetch menu from local SQLite, using default initial items:', err);
@@ -139,6 +141,20 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
   }, [menuItems]);
 
+  const resetMenu = useCallback(async () => {
+    try {
+      setMenuLoading(true);
+      setMenuError(null);
+      const seeded = await menuService.resetToDefaults(INITIAL_MENU_ITEMS);
+      setMenuItems(seeded);
+    } catch (err) {
+      console.error('[DataContext] Failed to reset menu to defaults:', err);
+      setMenuError(err as Error);
+    } finally {
+      setMenuLoading(false);
+    }
+  }, []);
+
   // ── Orders mutations ──────────────────────────────────────────────────────────
 
   const addOrder = useCallback(async (order: Omit<Order, 'id'>): Promise<Order | null> => {
@@ -200,6 +216,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       deleteItem,
       toggleAvailability,
       refetch: fetchMenu,
+      resetMenu,
     },
     orders: {
       orders: ordersList,

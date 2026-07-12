@@ -23,7 +23,8 @@
       "electron/**/*"
     ],
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "icon": "electron/icon.png"
     }
   },
   "dependencies": {

@@ -4,7 +4,7 @@ import { getTaxRate } from '../../utils/settingsConfig';
 import { MenuItem, CATEGORIES } from '../../types/menu';
 import { OrderItem, Order } from '../../types/order';
 import { useLanguage } from '../../context/LanguageContext';
-import { Coffee, Trash2, Plus, Minus, CreditCard, DollarSign, Check, XCircle, Printer } from 'lucide-react';
+import { Coffee, Trash2, Plus, Minus, CreditCard, DollarSign, Check, XCircle, Printer, Search } from 'lucide-react';
 import { clsx } from 'clsx';
 import { printCustomerReceipt } from '../../utils/printReceipts';
 
@@ -51,6 +51,7 @@ export function POSView({ menuItems, onCreateOrder, estimatedOrderNumber }: POSV
   });
   
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -100,9 +101,28 @@ export function POSView({ menuItems, onCreateOrder, estimatedOrderNumber }: POSV
   // Filtered menu items
   const filteredMenuItems = useMemo(() => {
     const available = menuItems.filter(item => item.available);
-    if (selectedCategory === 'All') return available;
-    return available.filter(item => item.category === selectedCategory);
-  }, [menuItems, selectedCategory]);
+    
+    // First, filter by category
+    const categoryFiltered = selectedCategory === 'All' 
+      ? available 
+      : available.filter(item => item.category === selectedCategory);
+      
+    // Next, filter by search query (Arabic & English support)
+    if (!searchQuery.trim()) return categoryFiltered;
+    
+    const query = searchQuery.toLowerCase().trim();
+    return categoryFiltered.filter(item => {
+      const nameTranslated = t(item.name).toLowerCase();
+      const descTranslated = t(item.description || '').toLowerCase();
+      const nameOriginal = item.name.toLowerCase();
+      const descOriginal = (item.description || '').toLowerCase();
+      
+      return nameOriginal.includes(query) || 
+             descOriginal.includes(query) ||
+             nameTranslated.includes(query) ||
+             descTranslated.includes(query);
+    });
+  }, [menuItems, selectedCategory, searchQuery, t]);
 
   // Total invoice amount
   const totalAmount = useMemo(() => {
@@ -473,22 +493,45 @@ export function POSView({ menuItems, onCreateOrder, estimatedOrderNumber }: POSV
 
       {/* 2. CENTER COLUMN: Product Grid & Category Filters (Width 2/4) */}
       <div className="flex-1 lg:h-full bg-white p-4 rounded-2xl border border-gray-200/80 shadow-sm flex flex-col overflow-hidden">
-        {/* Category Selector */}
-        <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-3 border-b border-gray-100 shrink-0">
-          {categories.map(cat => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={clsx(
-                "px-5 py-2.5 rounded-xl text-sm md:text-base font-black whitespace-nowrap transition-all border",
-                selectedCategory === cat
-                  ? "bg-mocha-600 text-white border-mocha-700 shadow-sm"
-                  : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100"
-              )}
-            >
-              {t(cat)}
-            </button>
-          ))}
+        {/* Category Selector & Search */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100 shrink-0">
+          {/* Categories */}
+          <div className="flex gap-2 overflow-x-auto hide-scrollbar">
+            {categories.map(cat => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={clsx(
+                  "px-5 py-2.5 rounded-xl text-sm md:text-base font-black whitespace-nowrap transition-all border",
+                  selectedCategory === cat
+                    ? "bg-mocha-600 text-white border-mocha-700 shadow-sm"
+                    : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100"
+                )}
+              >
+                {t(cat)}
+              </button>
+            ))}
+          </div>
+
+          {/* Search Input */}
+          <div className="relative w-full sm:w-64">
+            <Search className={`absolute top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 ${isRtl ? 'right-3' : 'left-3'}`} />
+            <input
+              type="text"
+              placeholder={t('Search items...')}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className={`w-full py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-mocha-500 focus:border-transparent text-sm font-semibold ${isRtl ? 'pr-9 pl-4' : 'pl-9 pr-4'}`}
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className={`absolute top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 ${isRtl ? 'left-3' : 'right-3'}`}
+              >
+                <XCircle size={16} />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Products Grid */}
