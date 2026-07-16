@@ -15,7 +15,6 @@ import Settings from './pages/Settings';
 import Login from './pages/Login';
 import PublicMenu from './pages/PublicMenu';
 import Customers from './pages/Customers';
-import { PinProtection } from './components/auth/PinProtection';
 
 
 function ProtectedRoute() {
@@ -44,10 +43,8 @@ function AppRoutes() {
           <Route path="/payment" element={<Payment />} />
           <Route path="/customers" element={<Customers />} />
           
-          <Route element={<PinProtection />}>
-            <Route path="/reports" element={<Reports />} />
-            <Route path="/settings" element={<Settings />} />
-          </Route>
+          <Route path="/reports" element={<Reports />} />
+          <Route path="/settings" element={<Settings />} />
         </Route>
       </Route>
       <Route path="/" element={<Navigate to="/dashboard" replace />} />

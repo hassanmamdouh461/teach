@@ -5,7 +5,6 @@ import { motion } from 'framer-motion';
 
 export function MobileNav() {
   const navItems = [
-    { icon: Home, label: 'Home', path: '/dashboard' },
     { icon: ShoppingBag, label: 'Orders', path: '/orders' },
     { icon: UtensilsCrossed, label: 'Menu', path: '/menu' },
     { icon: CreditCard, label: 'Payment', path: '/payment' },

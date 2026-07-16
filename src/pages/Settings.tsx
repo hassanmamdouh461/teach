@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { User, Store, Lock, HelpCircle, LogOut, QrCode } from 'lucide-react';
+import { User, Store, HelpCircle, LogOut, QrCode } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { QrMenuModal } from '../components/settings/QrMenuModal';
-import { PinSetupModal } from '../components/settings/PinSetupModal';
 import { ProfileSettingsModal } from '../components/settings/ProfileSettingsModal';
 import { StoreConfigModal } from '../components/settings/StoreConfigModal';
 import { useLanguage } from '../context/LanguageContext';
@@ -12,7 +11,6 @@ import { DatabaseStatus } from '../components/ui/DatabaseStatus';
 export default function Settings() {
   const { t } = useLanguage();
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
-  const [isPinModalOpen, setIsPinModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isStoreModalOpen, setIsStoreModalOpen] = useState(false);
   const { logout } = useAuth();
@@ -33,14 +31,6 @@ export default function Settings() {
       color: 'text-emerald-600',
       bgColor: 'bg-emerald-50',
       description: 'Edit tax rates',
-    },
-    {
-      id: 'security',
-      title: 'Security & Access',
-      icon: Lock,
-      color: 'text-indigo-600',
-      bgColor: 'bg-indigo-50',
-      description: 'Manage pin codes and user permissions',
     },
   ];
 
@@ -152,7 +142,6 @@ export default function Settings() {
       </div>
       
       <QrMenuModal isOpen={isQrModalOpen} onClose={() => setIsQrModalOpen(false)} />
-      <PinSetupModal isOpen={isPinModalOpen} onClose={() => setIsPinModalOpen(false)} />
       <ProfileSettingsModal isOpen={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)} />
       <StoreConfigModal isOpen={isStoreModalOpen} onClose={() => setIsStoreModalOpen(false)} />
     </div>

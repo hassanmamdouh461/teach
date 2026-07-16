@@ -87,7 +87,6 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
 
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">
-        <SidebarItem icon={LayoutDashboard} label={t('Dashboard')} to="/dashboard" collapsed={!isMobile && collapsed} onClick={handleItemClick} />
         <SidebarItem icon={ClipboardList} label={t('Cashier Board')} to="/orders" collapsed={!isMobile && collapsed} onClick={handleItemClick} />
         <SidebarItem icon={CreditCard} label={t('Payment & Invoice')} to="/payment" collapsed={!isMobile && collapsed} onClick={handleItemClick} />
         <SidebarItem icon={UtensilsCrossed} label={t('Menu')} to="/menu" collapsed={!isMobile && collapsed} onClick={handleItemClick} />
